@@ -12,5 +12,9 @@ export default async function PreviewPage(
 
   if (!page) notFound()
 
-  return <PreviewRenderer tree={page.content} />
+  return (
+    <div className="bg-white text-black min-h-screen">
+      <PreviewRenderer tree={page.content} />
+    </div>
+  )
 }

@@ -10,17 +10,15 @@ export function EditorCanvas() {
 
   return (
     <div
-      className="flex-1 overflow-auto bg-surface-0 p-6"
+      className={`flex-1 overflow-auto ${viewport === 'mobile' ? 'bg-surface-0' : ''}`}
       onClick={() => selectNode(null)}
     >
-      <div className="mx-auto flex min-h-full justify-center">
-        <div
-          className={`bg-white shadow-xl shadow-black/20 rounded-lg overflow-hidden transition-all duration-300 ${
-            viewport === 'desktop' ? 'w-full max-w-[1024px]' : 'w-[375px]'
-          }`}
-        >
-          <NodeRenderer node={tree} />
-        </div>
+      <div
+        className={`mx-auto min-h-full bg-white transition-all duration-300 ${
+          viewport === 'desktop' ? 'w-full' : 'w-[375px]'
+        }`}
+      >
+        <NodeRenderer node={tree} />
       </div>
     </div>
   )

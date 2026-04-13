@@ -8,6 +8,8 @@ import { TextProps } from './property-panels/text-props'
 import { ImageProps } from './property-panels/image-props'
 import { ButtonProps } from './property-panels/button-props'
 import { SectionProps } from './property-panels/section-props'
+import { MenuBarProps } from './property-panels/menu-bar-props'
+import { FooterProps } from './property-panels/footer-props'
 import type { Node, NodeType } from '@/lib/types'
 
 const typeLabels: Record<NodeType, string> = {
@@ -15,6 +17,8 @@ const typeLabels: Record<NodeType, string> = {
   text: 'Text',
   image: 'Image',
   button: 'Button',
+  'menu-bar': 'Menu Bar',
+  footer: 'Footer',
 }
 
 const propPanels: Record<NodeType, React.FC<{ node: Node }>> = {
@@ -22,6 +26,8 @@ const propPanels: Record<NodeType, React.FC<{ node: Node }>> = {
   text: TextProps,
   image: ImageProps,
   button: ButtonProps,
+  'menu-bar': MenuBarProps,
+  footer: FooterProps,
 }
 
 export function EditorSidebar() {

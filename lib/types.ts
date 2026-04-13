@@ -1,4 +1,4 @@
-export type NodeType = 'section' | 'text' | 'image' | 'button'
+export type NodeType = 'section' | 'text' | 'image' | 'button' | 'menu-bar' | 'footer'
 
 export type Node = {
   id: string

@@ -8,6 +8,8 @@ const typeLabels: Record<NodeType, string> = {
   text: 'Text',
   image: 'Image',
   button: 'Button',
+  'menu-bar': 'Menu Bar',
+  footer: 'Footer',
 }
 
 interface SelectableWrapperProps {

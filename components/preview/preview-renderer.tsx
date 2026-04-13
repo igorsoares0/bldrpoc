@@ -126,11 +126,65 @@ function ButtonNode({ node }: PreviewNodeProps) {
   )
 }
 
+function MenuBarNode({ node }: PreviewNodeProps) {
+  const {
+    backgroundColor = '#09090b',
+    padding = '16px 32px',
+    gap = '24px',
+  } = node.props
+
+  return (
+    <nav
+      style={{
+        backgroundColor,
+        padding,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap,
+        width: '100%',
+      }}
+    >
+      {node.children?.map((child) => (
+        <PreviewNode key={child.id} node={child} />
+      ))}
+    </nav>
+  )
+}
+
+function FooterNode({ node }: PreviewNodeProps) {
+  const {
+    backgroundColor = '#09090b',
+    padding = '40px 24px',
+    gap = '16px',
+  } = node.props
+
+  return (
+    <footer
+      style={{
+        backgroundColor,
+        padding,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap,
+        width: '100%',
+      }}
+    >
+      {node.children?.map((child) => (
+        <PreviewNode key={child.id} node={child} />
+      ))}
+    </footer>
+  )
+}
+
 const renderers: Record<string, React.FC<PreviewNodeProps>> = {
   section: SectionNode,
   text: TextNode,
   image: ImageNode,
   button: ButtonNode,
+  'menu-bar': MenuBarNode,
+  footer: FooterNode,
 }
 
 function PreviewNode({ node }: PreviewNodeProps) {

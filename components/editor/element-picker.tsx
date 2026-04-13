@@ -9,6 +9,7 @@ import {
   RectangleHorizontal,
   PanelTop,
   PanelBottom,
+  Sparkles,
 } from 'lucide-react'
 import { useEditorStore } from '@/lib/store'
 import type { Node, NodeType } from '@/lib/types'
@@ -206,6 +207,66 @@ const elements: ElementDef[] = [
     }),
   },
   {
+    type: 'section',
+    label: 'Hero',
+    icon: Sparkles,
+    category: 'section',
+    createNode: () => ({
+      id: uid(),
+      type: 'section',
+      props: {
+        padding: '80px 24px',
+        backgroundColor: '#ffffff',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '24px',
+        minHeight: '80vh',
+      },
+      children: [
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content: 'Build Something Amazing',
+            variant: 'h1',
+            color: '#09090b',
+            fontSize: '48px',
+            fontWeight: '700',
+            textAlign: 'center',
+          },
+        },
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content:
+              'Create beautiful landing pages in minutes. No coding required.',
+            variant: 'p',
+            color: '#71717a',
+            fontSize: '18px',
+            fontWeight: '400',
+            textAlign: 'center',
+          },
+        },
+        {
+          id: uid(),
+          type: 'button',
+          props: {
+            label: 'Get Started',
+            backgroundColor: '#3b82f6',
+            color: '#ffffff',
+            borderRadius: '8px',
+            paddingX: '32px',
+            paddingY: '14px',
+            fontSize: '16px',
+            fontWeight: '600',
+          },
+        },
+      ],
+    }),
+  },
+  {
     type: 'footer',
     label: 'Footer',
     icon: PanelBottom,
@@ -363,7 +424,7 @@ export function ElementPicker() {
           </p>
           {basicElements.map((el) => (
             <button
-              key={el.type}
+              key={el.label}
               onClick={() => handleAdd(el)}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-surface-2 hover:text-text-primary cursor-pointer"
             >
@@ -377,7 +438,7 @@ export function ElementPicker() {
           </p>
           {sectionTemplates.map((el) => (
             <button
-              key={el.type}
+              key={el.label}
               onClick={() => handleAdd(el)}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-surface-2 hover:text-text-primary cursor-pointer"
             >

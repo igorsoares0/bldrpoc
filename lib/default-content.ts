@@ -4,6 +4,22 @@ function uid() {
   return crypto.randomUUID()
 }
 
+export function createBlankContent(): Node {
+  return {
+    id: uid(),
+    type: 'section',
+    props: {
+      padding: '0px',
+      backgroundColor: '#ffffff',
+      flexDirection: 'column',
+      alignItems: 'stretch',
+      justifyContent: 'flex-start',
+      gap: '0px',
+    },
+    children: [],
+  }
+}
+
 export function createDefaultContent(): Node {
   return {
     id: uid(),

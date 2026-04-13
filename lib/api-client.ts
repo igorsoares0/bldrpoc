@@ -13,7 +13,7 @@ export async function getPage(id: string): Promise<Page> {
 }
 
 export async function createPage(
-  data: Partial<Pick<Page, 'title' | 'slug'>>,
+  data: Partial<Pick<Page, 'title' | 'slug'>> & { template?: string },
 ): Promise<Page> {
   const res = await fetch('/api/pages', {
     method: 'POST',

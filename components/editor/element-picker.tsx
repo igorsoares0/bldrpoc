@@ -10,6 +10,7 @@ import {
   PanelTop,
   PanelBottom,
   Sparkles,
+  Columns2,
 } from 'lucide-react'
 import { useEditorStore } from '@/lib/store'
 import type { Node, NodeType } from '@/lib/types'
@@ -261,6 +262,92 @@ const elements: ElementDef[] = [
             paddingY: '14px',
             fontSize: '16px',
             fontWeight: '600',
+          },
+        },
+      ],
+    }),
+  },
+  {
+    type: 'section',
+    label: 'Hero with Image',
+    icon: Columns2,
+    category: 'section',
+    createNode: () => ({
+      id: uid(),
+      type: 'section',
+      props: {
+        padding: '64px 48px',
+        backgroundColor: '#ffffff',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '48px',
+        minHeight: '80vh',
+      },
+      children: [
+        {
+          id: uid(),
+          type: 'section',
+          props: {
+            padding: '0px',
+            backgroundColor: 'transparent',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: '24px',
+          },
+          children: [
+            {
+              id: uid(),
+              type: 'text',
+              props: {
+                content: 'Build Something Amazing',
+                variant: 'h1',
+                color: '#09090b',
+                fontSize: '44px',
+                fontWeight: '700',
+                textAlign: 'left',
+              },
+            },
+            {
+              id: uid(),
+              type: 'text',
+              props: {
+                content:
+                  'Create beautiful landing pages in minutes. No coding required. Just drag, drop, and publish.',
+                variant: 'p',
+                color: '#71717a',
+                fontSize: '18px',
+                fontWeight: '400',
+                textAlign: 'left',
+                lineHeight: '1.7',
+              },
+            },
+            {
+              id: uid(),
+              type: 'button',
+              props: {
+                label: 'Get Started',
+                backgroundColor: '#3b82f6',
+                color: '#ffffff',
+                borderRadius: '8px',
+                paddingX: '32px',
+                paddingY: '14px',
+                fontSize: '16px',
+                fontWeight: '600',
+              },
+            },
+          ],
+        },
+        {
+          id: uid(),
+          type: 'image',
+          props: {
+            src: 'https://placehold.co/560x400/e2e8f0/94a3b8?text=Hero+Image',
+            alt: 'Hero image',
+            width: '100%',
+            height: 'auto',
+            borderRadius: '12px',
+            objectFit: 'cover',
           },
         },
       ],

@@ -1,9 +1,25 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import type { Node } from '@/lib/types'
 
 interface PreviewNodeProps {
   node: Node
+}
+
+function positionedWrapper(
+  node: Node,
+  element: React.ReactElement,
+): React.ReactElement {
+  const { x, y, w } = node.props
+  if (typeof x !== 'number' || typeof y !== 'number') return element
+  const style: CSSProperties = {
+    position: 'absolute',
+    left: `${x}px`,
+    top: `${y}px`,
+    width: typeof w === 'number' ? `${w}px` : undefined,
+  }
+  return <div style={style}>{element}</div>
 }
 
 function SectionNode({ node }: PreviewNodeProps) {
@@ -15,7 +31,26 @@ function SectionNode({ node }: PreviewNodeProps) {
     justifyContent = 'flex-start',
     gap = '16px',
     minHeight,
+    freeLayout,
   } = node.props
+
+  if (freeLayout) {
+    return (
+      <div
+        style={{
+          position: 'relative',
+          padding,
+          backgroundColor,
+          minHeight,
+          width: '100%',
+        }}
+      >
+        {node.children?.map((child) => (
+          <PreviewNode key={child.id} node={child} />
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div
@@ -131,7 +166,27 @@ function MenuBarNode({ node }: PreviewNodeProps) {
     backgroundColor = '#09090b',
     padding = '16px 32px',
     gap = '24px',
+    minHeight,
+    freeLayout,
   } = node.props
+
+  if (freeLayout) {
+    return (
+      <nav
+        style={{
+          position: 'relative',
+          backgroundColor,
+          padding,
+          minHeight,
+          width: '100%',
+        }}
+      >
+        {node.children?.map((child) => (
+          <PreviewNode key={child.id} node={child} />
+        ))}
+      </nav>
+    )
+  }
 
   return (
     <nav
@@ -157,7 +212,27 @@ function FooterNode({ node }: PreviewNodeProps) {
     backgroundColor = '#09090b',
     padding = '40px 24px',
     gap = '16px',
+    minHeight,
+    freeLayout,
   } = node.props
+
+  if (freeLayout) {
+    return (
+      <footer
+        style={{
+          position: 'relative',
+          backgroundColor,
+          padding,
+          minHeight,
+          width: '100%',
+        }}
+      >
+        {node.children?.map((child) => (
+          <PreviewNode key={child.id} node={child} />
+        ))}
+      </footer>
+    )
+  }
 
   return (
     <footer
@@ -190,7 +265,7 @@ const renderers: Record<string, React.FC<PreviewNodeProps>> = {
 function PreviewNode({ node }: PreviewNodeProps) {
   const Renderer = renderers[node.type]
   if (!Renderer) return null
-  return <Renderer node={node} />
+  return positionedWrapper(node, <Renderer node={node} />)
 }
 
 export function PreviewRenderer({ tree }: { tree: Node }) {

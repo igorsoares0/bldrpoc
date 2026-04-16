@@ -5,9 +5,27 @@ import type { Node } from '@/lib/types'
 
 interface NodeRendererProps {
   node: Node
+  parentId?: string
+  sectionId?: string
 }
 
-function SectionNode({ node }: NodeRendererProps) {
+interface ContainerRenderProps {
+  node: Node
+  sectionId?: string
+}
+
+function renderChildren(node: Node, sectionId?: string) {
+  return node.children?.map((child) => (
+    <NodeRenderer
+      key={child.id}
+      node={child}
+      parentId={node.id}
+      sectionId={sectionId}
+    />
+  ))
+}
+
+function SectionNode({ node, sectionId }: ContainerRenderProps) {
   const {
     padding = '24px',
     backgroundColor = '#ffffff',
@@ -16,7 +34,24 @@ function SectionNode({ node }: NodeRendererProps) {
     justifyContent = 'flex-start',
     gap = '16px',
     minHeight,
+    freeLayout,
   } = node.props
+
+  if (freeLayout) {
+    return (
+      <div
+        style={{
+          position: 'relative',
+          padding,
+          backgroundColor,
+          minHeight,
+          width: '100%',
+        }}
+      >
+        {renderChildren(node, sectionId)}
+      </div>
+    )
+  }
 
   return (
     <div
@@ -32,14 +67,12 @@ function SectionNode({ node }: NodeRendererProps) {
         width: '100%',
       }}
     >
-      {node.children?.map((child) => (
-        <NodeRenderer key={child.id} node={child} />
-      ))}
+      {renderChildren(node, sectionId)}
     </div>
   )
 }
 
-function TextNode({ node }: NodeRendererProps) {
+function TextNode({ node }: ContainerRenderProps) {
   const {
     content = 'Text',
     variant = 'p',
@@ -69,7 +102,7 @@ function TextNode({ node }: NodeRendererProps) {
   )
 }
 
-function ImageNode({ node }: NodeRendererProps) {
+function ImageNode({ node }: ContainerRenderProps) {
   const {
     src = 'https://placehold.co/600x400/e2e8f0/94a3b8?text=Image',
     alt = 'Image',
@@ -95,7 +128,7 @@ function ImageNode({ node }: NodeRendererProps) {
   )
 }
 
-function ButtonNode({ node }: NodeRendererProps) {
+function ButtonNode({ node }: ContainerRenderProps) {
   const {
     label = 'Button',
     backgroundColor = '#3b82f6',
@@ -127,12 +160,30 @@ function ButtonNode({ node }: NodeRendererProps) {
   )
 }
 
-function MenuBarNode({ node }: NodeRendererProps) {
+function MenuBarNode({ node, sectionId }: ContainerRenderProps) {
   const {
     backgroundColor = '#09090b',
     padding = '16px 32px',
     gap = '24px',
+    minHeight,
+    freeLayout,
   } = node.props
+
+  if (freeLayout) {
+    return (
+      <nav
+        style={{
+          position: 'relative',
+          backgroundColor,
+          padding,
+          minHeight,
+          width: '100%',
+        }}
+      >
+        {renderChildren(node, sectionId)}
+      </nav>
+    )
+  }
 
   return (
     <nav
@@ -146,19 +197,35 @@ function MenuBarNode({ node }: NodeRendererProps) {
         width: '100%',
       }}
     >
-      {node.children?.map((child) => (
-        <NodeRenderer key={child.id} node={child} />
-      ))}
+      {renderChildren(node, sectionId)}
     </nav>
   )
 }
 
-function FooterNode({ node }: NodeRendererProps) {
+function FooterNode({ node, sectionId }: ContainerRenderProps) {
   const {
     backgroundColor = '#09090b',
     padding = '40px 24px',
     gap = '16px',
+    minHeight,
+    freeLayout,
   } = node.props
+
+  if (freeLayout) {
+    return (
+      <footer
+        style={{
+          position: 'relative',
+          backgroundColor,
+          padding,
+          minHeight,
+          width: '100%',
+        }}
+      >
+        {renderChildren(node, sectionId)}
+      </footer>
+    )
+  }
 
   return (
     <footer
@@ -172,14 +239,12 @@ function FooterNode({ node }: NodeRendererProps) {
         width: '100%',
       }}
     >
-      {node.children?.map((child) => (
-        <NodeRenderer key={child.id} node={child} />
-      ))}
+      {renderChildren(node, sectionId)}
     </footer>
   )
 }
 
-const renderers: Record<string, React.FC<NodeRendererProps>> = {
+const renderers: Record<string, React.FC<ContainerRenderProps>> = {
   section: SectionNode,
   text: TextNode,
   image: ImageNode,
@@ -188,13 +253,19 @@ const renderers: Record<string, React.FC<NodeRendererProps>> = {
   footer: FooterNode,
 }
 
-export function NodeRenderer({ node }: NodeRendererProps) {
+export function NodeRenderer({ node, parentId, sectionId }: NodeRendererProps) {
   const Renderer = renderers[node.type]
   if (!Renderer) return null
 
+  const effectiveSectionId = sectionId ?? (parentId ? node.id : undefined)
+
   return (
-    <SelectableWrapper nodeId={node.id} nodeType={node.type}>
-      <Renderer node={node} />
+    <SelectableWrapper
+      node={node}
+      parentId={parentId}
+      sectionId={effectiveSectionId}
+    >
+      <Renderer node={node} sectionId={effectiveSectionId} />
     </SelectableWrapper>
   )
 }

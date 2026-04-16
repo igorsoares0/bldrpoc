@@ -8,6 +8,24 @@ import {
   addNodeToParent,
 } from './tree-utils'
 
+export type ChildSnapshot = {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+export type DragSession = {
+  id: string
+  sectionId: string
+  offsetX: number
+  offsetY: number
+  snapshot: Record<string, ChildSnapshot>
+  sectionHeight: number
+}
+
+const LEAF_TYPES = ['text', 'image', 'button']
+
 type EditorState = {
   page: Page | null
   tree: Node
@@ -15,12 +33,22 @@ type EditorState = {
   viewport: 'desktop' | 'mobile'
   isDirty: boolean
   isSaving: boolean
+  dragSession: DragSession | null
 
   initializeEditor: (page: Page) => void
   selectNode: (id: string | null) => void
   updateNode: (id: string, props: Record<string, any>) => void
   addNode: (parentId: string, node: Node) => void
   deleteNode: (id: string) => void
+  placeNode: (
+    sectionId: string,
+    draggedId: string,
+    pos: { x: number; y: number },
+    snapshot: Record<string, ChildSnapshot>,
+    sectionHeight: number,
+  ) => void
+  beginDrag: (session: DragSession) => void
+  endDrag: () => void
   setViewport: (v: 'desktop' | 'mobile') => void
   saveToServer: () => Promise<void>
   updatePageTitle: (title: string) => void
@@ -40,6 +68,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   viewport: 'desktop',
   isDirty: false,
   isSaving: false,
+  dragSession: null,
 
   initializeEditor: (page) => {
     set({
@@ -49,6 +78,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       viewport: 'desktop',
       isDirty: false,
       isSaving: false,
+      dragSession: null,
     })
   },
 
@@ -79,6 +109,62 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selectedId: selectedId === id ? null : selectedId,
     })
   },
+
+  placeNode: (sectionId, draggedId, pos, snapshot, sectionHeight) => {
+    const { tree } = get()
+    const newTree = updateNodeById(tree, sectionId, (section) => {
+      const leaves: Node[] = []
+      const walk = (n: Node) => {
+        if (n.id !== section.id && LEAF_TYPES.includes(n.type)) {
+          leaves.push(n)
+          return
+        }
+        n.children?.forEach(walk)
+      }
+      walk(section)
+
+      const newChildren = leaves.map((leaf) => {
+        const snap = snapshot[leaf.id]
+        if (leaf.id === draggedId) {
+          return {
+            ...leaf,
+            props: {
+              ...leaf.props,
+              x: pos.x,
+              y: pos.y,
+              w: snap?.w ?? leaf.props.w,
+            },
+          }
+        }
+        if (snap && leaf.props.x === undefined) {
+          return {
+            ...leaf,
+            props: {
+              ...leaf.props,
+              x: snap.x,
+              y: snap.y,
+              w: snap.w,
+            },
+          }
+        }
+        return leaf
+      })
+
+      return {
+        ...section,
+        props: {
+          ...section.props,
+          freeLayout: true,
+          minHeight: section.props.minHeight ?? `${sectionHeight}px`,
+        },
+        children: newChildren,
+      }
+    })
+    set({ tree: newTree, isDirty: true })
+  },
+
+  beginDrag: (session) => set({ dragSession: session }),
+  endDrag: () => set({ dragSession: null }),
 
   setViewport: (v) => set({ viewport: v }),
 

@@ -2,6 +2,7 @@
 
 import { useEditorStore } from '@/lib/store'
 import { Input } from '@/components/ui/input'
+import { DEFAULT_ROW_HEIGHT } from '@/lib/grid-utils'
 import type { Node } from '@/lib/types'
 
 const flexDirections = [
@@ -25,6 +26,8 @@ const justifyOptions = [
 
 export function SectionProps({ node }: { node: Node }) {
   const updateNode = useEditorStore((s) => s.updateNode)
+  const tree = useEditorStore((s) => s.tree)
+  const isRoot = tree.id === node.id
 
   return (
     <div className="flex flex-col gap-4">
@@ -64,68 +67,87 @@ export function SectionProps({ node }: { node: Node }) {
         onChange={(e) => updateNode(node.id, { minHeight: e.target.value })}
       />
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-text-secondary">
-          Direction
-        </label>
-        <div className="flex gap-1">
-          {flexDirections.map((d) => (
-            <button
-              key={d.value}
-              onClick={() => updateNode(node.id, { flexDirection: d.value })}
-              className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
-                (node.props.flexDirection || 'column') === d.value
-                  ? 'bg-accent text-white'
-                  : 'bg-surface-2 text-text-secondary hover:bg-surface-3'
-              }`}
+      {isRoot ? (
+        <>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-text-secondary">
+              Direction
+            </label>
+            <div className="flex gap-1">
+              {flexDirections.map((d) => (
+                <button
+                  key={d.value}
+                  onClick={() =>
+                    updateNode(node.id, { flexDirection: d.value })
+                  }
+                  className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                    (node.props.flexDirection || 'column') === d.value
+                      ? 'bg-accent text-white'
+                      : 'bg-surface-2 text-text-secondary hover:bg-surface-3'
+                  }`}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-text-secondary">
+              Align Items
+            </label>
+            <select
+              value={node.props.alignItems || 'stretch'}
+              onChange={(e) =>
+                updateNode(node.id, { alignItems: e.target.value })
+              }
+              className="h-9 w-full rounded-lg border border-surface-3 bg-surface-2 px-3 text-sm text-text-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
             >
-              {d.label}
-            </button>
-          ))}
-        </div>
-      </div>
+              {alignOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-text-secondary">
-          Align Items
-        </label>
-        <select
-          value={node.props.alignItems || 'stretch'}
-          onChange={(e) => updateNode(node.id, { alignItems: e.target.value })}
-          className="h-9 w-full rounded-lg border border-surface-3 bg-surface-2 px-3 text-sm text-text-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
-        >
-          {alignOptions.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-text-secondary">
+              Justify Content
+            </label>
+            <select
+              value={node.props.justifyContent || 'flex-start'}
+              onChange={(e) =>
+                updateNode(node.id, { justifyContent: e.target.value })
+              }
+              className="h-9 w-full rounded-lg border border-surface-3 bg-surface-2 px-3 text-sm text-text-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
+            >
+              {justifyOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-text-secondary">
-          Justify Content
-        </label>
-        <select
-          value={node.props.justifyContent || 'flex-start'}
+          <Input
+            label="Gap"
+            value={node.props.gap || '16px'}
+            onChange={(e) => updateNode(node.id, { gap: e.target.value })}
+          />
+        </>
+      ) : (
+        <Input
+          label="Row Height (px)"
+          type="number"
+          value={node.props.rowHeight ?? DEFAULT_ROW_HEIGHT}
           onChange={(e) =>
-            updateNode(node.id, { justifyContent: e.target.value })
+            updateNode(node.id, {
+              rowHeight: Number(e.target.value) || DEFAULT_ROW_HEIGHT,
+            })
           }
-          className="h-9 w-full rounded-lg border border-surface-3 bg-surface-2 px-3 text-sm text-text-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
-        >
-          {justifyOptions.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <Input
-        label="Gap"
-        value={node.props.gap || '16px'}
-        onChange={(e) => updateNode(node.id, { gap: e.target.value })}
-      />
+        />
+      )}
     </div>
   )
 }

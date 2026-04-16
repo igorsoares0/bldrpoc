@@ -2,6 +2,7 @@
 
 import { useEditorStore } from '@/lib/store'
 import { Input } from '@/components/ui/input'
+import { GridPlacementEditor } from './grid-placement-editor'
 import type { Node } from '@/lib/types'
 
 const variants = [
@@ -31,6 +32,7 @@ export function TextProps({ node }: { node: Node }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <GridPlacementEditor node={node} />
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-text-secondary">
           Content

@@ -1,8 +1,17 @@
 'use client'
 
-import { useState, type CSSProperties } from 'react'
-import { useEditorStore, type ChildSnapshot } from '@/lib/store'
-import type { Node, NodeType } from '@/lib/types'
+import { type CSSProperties } from 'react'
+import { useEditorStore, type DragSession } from '@/lib/store'
+import { getNodeById } from '@/lib/tree-utils'
+import {
+  clampPlacement,
+  colsForViewport,
+  DEFAULT_ROW_HEIGHT,
+  getActivePlacement,
+  isLeafType,
+  placementToStyle,
+} from '@/lib/grid-utils'
+import type { GridPlacement, Node, NodeType } from '@/lib/types'
 
 const typeLabels: Record<NodeType, string> = {
   section: 'Section',
@@ -13,19 +22,70 @@ const typeLabels: Record<NodeType, string> = {
   footer: 'Footer',
 }
 
-const LEAF_TYPES: NodeType[] = ['text', 'image', 'button']
-
 interface SelectableWrapperProps {
   node: Node
   parentId?: string
   sectionId?: string
+  parentGridLayout?: boolean
+  indexInParent?: number
   children: React.ReactNode
+}
+
+type SectionMetrics = {
+  contentLeft: number
+  contentTop: number
+  contentWidth: number
+  contentHeight: number
+  cellWidth: number
+  rowHeight: number
+}
+
+function readSectionMetrics(
+  sectionEl: HTMLElement,
+  cols: number,
+  rowHeight: number,
+): SectionMetrics {
+  const rect = sectionEl.getBoundingClientRect()
+  const cs = getComputedStyle(sectionEl)
+  const padL = parseFloat(cs.paddingLeft) || 0
+  const padR = parseFloat(cs.paddingRight) || 0
+  const padT = parseFloat(cs.paddingTop) || 0
+  const padB = parseFloat(cs.paddingBottom) || 0
+  const contentWidth = Math.max(1, rect.width - padL - padR)
+  const contentHeight = Math.max(1, rect.height - padT - padB)
+  return {
+    contentLeft: rect.left + padL,
+    contentTop: rect.top + padT,
+    contentWidth,
+    contentHeight,
+    cellWidth: contentWidth / cols,
+    rowHeight,
+  }
+}
+
+function rectToPlacement(
+  childRect: DOMRect,
+  metrics: SectionMetrics,
+  cols: number,
+): GridPlacement {
+  const colSpan = Math.max(1, Math.round(childRect.width / metrics.cellWidth))
+  const rowSpan = Math.max(1, Math.round(childRect.height / metrics.rowHeight))
+  const col = Math.max(
+    1,
+    Math.round((childRect.left - metrics.contentLeft) / metrics.cellWidth) + 1,
+  )
+  const row = Math.max(
+    1,
+    Math.round((childRect.top - metrics.contentTop) / metrics.rowHeight) + 1,
+  )
+  return clampPlacement({ col, row, colSpan, rowSpan }, cols)
 }
 
 export function SelectableWrapper({
   node,
-  parentId,
   sectionId,
+  parentGridLayout,
+  indexInParent = 0,
   children,
 }: SelectableWrapperProps) {
   const selectedId = useEditorStore((s) => s.selectedId)
@@ -33,124 +93,173 @@ export function SelectableWrapper({
   const dragSession = useEditorStore((s) => s.dragSession)
   const beginDrag = useEditorStore((s) => s.beginDrag)
   const endDrag = useEditorStore((s) => s.endDrag)
-  const placeNode = useEditorStore((s) => s.placeNode)
+  const setDragGhost = useEditorStore((s) => s.setDragGhost)
+  const placeNodeInGrid = useEditorStore((s) => s.placeNodeInGrid)
+  const viewport = useEditorStore((s) => s.viewport)
 
-  const [isDropTarget, setIsDropTarget] = useState(false)
-
-  const { id: nodeId, type: nodeType, props } = node
+  const { id: nodeId, type: nodeType } = node
   const isSelected = selectedId === nodeId
-  const isLeaf = LEAF_TYPES.includes(nodeType)
-  const isDraggable = isLeaf && Boolean(sectionId)
+  const isLeaf = isLeafType(nodeType)
+  const isDraggable = isLeaf && Boolean(parentGridLayout) && Boolean(sectionId)
   const isSectionRoot = Boolean(sectionId) && nodeId === sectionId
-  const hasFreePosition =
-    typeof props.x === 'number' && typeof props.y === 'number'
 
-  const positionStyle: CSSProperties = hasFreePosition
-    ? {
-        position: 'absolute',
-        left: `${props.x}px`,
-        top: `${props.y}px`,
-        width: typeof props.w === 'number' ? `${props.w}px` : undefined,
-      }
-    : {}
+  const placementStyle: CSSProperties =
+    parentGridLayout && isLeaf
+      ? {
+          ...placementToStyle(getActivePlacement(node, viewport, indexInParent)),
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }
+      : {}
 
   const canAcceptDrop =
     isSectionRoot &&
     dragSession !== null &&
     dragSession.sectionId === nodeId
 
+  const isDropTarget = canAcceptDrop && Boolean(dragSession)
+
   return (
     <div
       data-node-id={nodeId}
       data-node-type={nodeType}
-      style={positionStyle}
+      style={placementStyle}
       draggable={isDraggable}
       onDragStart={(e) => {
         if (!isDraggable || !sectionId) return
         e.stopPropagation()
 
-        const childRect = e.currentTarget.getBoundingClientRect()
-        const offsetX = e.clientX - childRect.left
-        const offsetY = e.clientY - childRect.top
-
         const sectionEl = document.querySelector<HTMLElement>(
-          `[data-node-id="${sectionId}"]`,
+          `[data-grid-section][data-node-id="${sectionId}"]`,
         )
-        const snapshot: Record<string, ChildSnapshot> = {}
-        let sectionHeight = 0
-        if (sectionEl) {
-          const sectionRect = sectionEl.getBoundingClientRect()
-          sectionHeight = sectionRect.height
-          sectionEl
-            .querySelectorAll<HTMLElement>('[data-node-id]')
-            .forEach((el) => {
-              if (el === sectionEl) return
-              const id = el.getAttribute('data-node-id')
-              const type = el.getAttribute('data-node-type') as NodeType | null
-              if (!id || !type) return
-              if (!LEAF_TYPES.includes(type)) return
-              const r = el.getBoundingClientRect()
-              snapshot[id] = {
-                x: r.left - sectionRect.left,
-                y: r.top - sectionRect.top,
-                w: r.width,
-                h: r.height,
-              }
-            })
+        if (!sectionEl) return
+
+        const cols = colsForViewport(viewport)
+        const sectionNode = getNodeById(useEditorStore.getState().tree, sectionId)
+        const rowHeight = sectionNode?.props.rowHeight ?? DEFAULT_ROW_HEIGHT
+
+        const metrics = readSectionMetrics(sectionEl, cols, rowHeight)
+        const childRect = e.currentTarget.getBoundingClientRect()
+        const offsetCol = (e.clientX - metrics.contentLeft) / metrics.cellWidth -
+          (childRect.left - metrics.contentLeft) / metrics.cellWidth
+        const offsetRow = (e.clientY - metrics.contentTop) / metrics.rowHeight -
+          (childRect.top - metrics.contentTop) / metrics.rowHeight
+
+        const snapshot: Record<string, GridPlacement> = {}
+        sectionEl
+          .querySelectorAll<HTMLElement>('[data-node-id]')
+          .forEach((el) => {
+            if (el === sectionEl) return
+            const id = el.getAttribute('data-node-id')
+            const type = el.getAttribute('data-node-type') as NodeType | null
+            if (!id || !type || !isLeafType(type)) return
+            const r = el.getBoundingClientRect()
+            snapshot[id] = rectToPlacement(r, metrics, cols)
+          })
+
+        const draggedPlacement = snapshot[nodeId] ?? {
+          col: 1,
+          row: 1,
+          colSpan: 4,
+          rowSpan: 4,
+        }
+
+        const session: DragSession = {
+          id: nodeId,
+          sectionId,
+          viewport,
+          cols,
+          cellWidth: metrics.cellWidth,
+          rowHeight: metrics.rowHeight,
+          offsetCol,
+          offsetRow,
+          colSpan: draggedPlacement.colSpan,
+          rowSpan: draggedPlacement.rowSpan,
+          snapshot,
         }
 
         e.dataTransfer.setData('text/node-id', nodeId)
         e.dataTransfer.effectAllowed = 'move'
-        beginDrag({
-          id: nodeId,
-          sectionId,
-          offsetX,
-          offsetY,
-          snapshot,
-          sectionHeight,
-        })
+        beginDrag(session)
       }}
       onDragOver={(e) => {
-        if (!canAcceptDrop) return
+        if (!canAcceptDrop || !dragSession) return
         e.preventDefault()
         e.stopPropagation()
         e.dataTransfer.dropEffect = 'move'
-        if (!isDropTarget) setIsDropTarget(true)
+
+        const sectionEl = document.querySelector<HTMLElement>(
+          `[data-grid-section][data-node-id="${nodeId}"]`,
+        )
+        if (!sectionEl) return
+        const metrics = readSectionMetrics(
+          sectionEl,
+          dragSession.cols,
+          dragSession.rowHeight,
+        )
+        const cursorCol = (e.clientX - metrics.contentLeft) / metrics.cellWidth
+        const cursorRow = (e.clientY - metrics.contentTop) / metrics.rowHeight
+        const placement = clampPlacement(
+          {
+            col: Math.floor(cursorCol - dragSession.offsetCol) + 1,
+            row: Math.floor(cursorRow - dragSession.offsetRow) + 1,
+            colSpan: dragSession.colSpan,
+            rowSpan: dragSession.rowSpan,
+          },
+          dragSession.cols,
+        )
+        setDragGhost(placement)
       }}
       onDragLeave={(e) => {
         if (!canAcceptDrop) return
         const next = e.relatedTarget as globalThis.Node | null
         if (next && e.currentTarget.contains(next)) return
-        setIsDropTarget(false)
+        setDragGhost(null)
       }}
       onDrop={(e) => {
-        if (!canAcceptDrop || !dragSession) {
-          setIsDropTarget(false)
-          return
-        }
+        if (!canAcceptDrop || !dragSession) return
         e.preventDefault()
         e.stopPropagation()
-        const rect = e.currentTarget.getBoundingClientRect()
-        const draggedSnap = dragSession.snapshot[dragSession.id]
-        const rawX = e.clientX - rect.left - dragSession.offsetX
-        const rawY = e.clientY - rect.top - dragSession.offsetY
-        const maxX = Math.max(0, rect.width - (draggedSnap?.w ?? 0))
-        const maxY = Math.max(0, rect.height - (draggedSnap?.h ?? 0))
-        const newX = Math.max(0, Math.min(rawX, maxX))
-        const newY = Math.max(0, Math.min(rawY, maxY))
-        placeNode(
+
+        const sectionEl = document.querySelector<HTMLElement>(
+          `[data-grid-section][data-node-id="${nodeId}"]`,
+        )
+        if (!sectionEl) {
+          endDrag()
+          return
+        }
+        const metrics = readSectionMetrics(
+          sectionEl,
+          dragSession.cols,
+          dragSession.rowHeight,
+        )
+        const cursorCol = (e.clientX - metrics.contentLeft) / metrics.cellWidth
+        const cursorRow = (e.clientY - metrics.contentTop) / metrics.rowHeight
+        const rawCol = Math.floor(cursorCol - dragSession.offsetCol) + 1
+        const rawRow = Math.floor(cursorRow - dragSession.offsetRow) + 1
+
+        const placement = clampPlacement(
+          {
+            col: rawCol,
+            row: rawRow,
+            colSpan: dragSession.colSpan,
+            rowSpan: dragSession.rowSpan,
+          },
+          dragSession.cols,
+        )
+
+        placeNodeInGrid(
           nodeId,
           dragSession.id,
-          { x: newX, y: newY },
+          placement,
           dragSession.snapshot,
-          dragSession.sectionHeight,
+          dragSession.viewport,
         )
-        setIsDropTarget(false)
         endDrag()
       }}
       onDragEnd={() => {
         endDrag()
-        setIsDropTarget(false)
       }}
       onClick={(e) => {
         e.stopPropagation()
@@ -164,15 +273,15 @@ export function SelectableWrapper({
           : 'hover:ring-1 hover:ring-accent/40 hover:ring-offset-1 hover:ring-offset-white rounded-sm'
       }`}
     >
+      {children}
       {isSelected && (
-        <span className="absolute -top-5 left-0 z-10 rounded bg-accent px-1.5 py-0.5 text-[10px] font-medium text-white whitespace-nowrap">
+        <span className="absolute -top-5 left-0 z-10 rounded bg-accent px-1.5 py-0.5 text-[10px] font-medium text-white whitespace-nowrap pointer-events-none">
           {typeLabels[nodeType]}
         </span>
       )}
       {isDropTarget && (
-        <span className="pointer-events-none absolute inset-0 ring-2 ring-inset ring-accent bg-accent/5 rounded-sm z-20" />
+        <span className="pointer-events-none absolute inset-0 ring-2 ring-inset ring-accent/40 rounded-sm z-20" />
       )}
-      {children}
     </div>
   )
 }

@@ -1,12 +1,18 @@
 'use client'
 
 import { SelectableWrapper } from './selectable-wrapper'
+import { GridOverlay } from './grid-overlay'
+import { useEditorStore } from '@/lib/store'
+import { colsForViewport, gridSectionClassName, DEFAULT_ROW_HEIGHT } from '@/lib/grid-utils'
 import type { Node } from '@/lib/types'
 
 interface NodeRendererProps {
   node: Node
   parentId?: string
   sectionId?: string
+  parentGridLayout?: boolean
+  indexInParent?: number
+  isRoot?: boolean
 }
 
 interface ContainerRenderProps {
@@ -14,44 +20,62 @@ interface ContainerRenderProps {
   sectionId?: string
 }
 
-function renderChildren(node: Node, sectionId?: string) {
-  return node.children?.map((child) => (
+function renderChildren(node: Node, sectionId?: string, parentGridLayout?: boolean) {
+  return node.children?.map((child, i) => (
     <NodeRenderer
       key={child.id}
       node={child}
       parentId={node.id}
       sectionId={sectionId}
+      parentGridLayout={parentGridLayout}
+      indexInParent={i}
     />
   ))
 }
 
-function SectionNode({ node, sectionId }: ContainerRenderProps) {
+function GridContainer({
+  node,
+  sectionId,
+  tag: Tag,
+  baseStyle,
+}: ContainerRenderProps & {
+  tag: 'div' | 'nav' | 'footer'
+  baseStyle: React.CSSProperties
+}) {
+  const viewport = useEditorStore((s) => s.viewport)
+  const cols = colsForViewport(viewport)
+  const rowHeight = node.props.rowHeight ?? DEFAULT_ROW_HEIGHT
+
+  return (
+    <Tag
+      data-grid-section="true"
+      data-node-id={node.id}
+      className={gridSectionClassName(node.id)}
+      style={{
+        ...baseStyle,
+        display: 'grid',
+        gridTemplateColumns: `repeat(${cols}, 1fr)`,
+        gridAutoRows: `${rowHeight}px`,
+        position: 'relative',
+        width: '100%',
+      }}
+    >
+      {renderChildren(node, sectionId, true)}
+      <GridOverlay sectionId={node.id} />
+    </Tag>
+  )
+}
+
+function RootSectionNode({ node, sectionId }: ContainerRenderProps) {
   const {
-    padding = '24px',
+    padding = '0px',
     backgroundColor = '#ffffff',
     flexDirection = 'column',
     alignItems = 'stretch',
     justifyContent = 'flex-start',
-    gap = '16px',
+    gap = '0px',
     minHeight,
-    freeLayout,
   } = node.props
-
-  if (freeLayout) {
-    return (
-      <div
-        style={{
-          position: 'relative',
-          padding,
-          backgroundColor,
-          minHeight,
-          width: '100%',
-        }}
-      >
-        {renderChildren(node, sectionId)}
-      </div>
-    )
-  }
 
   return (
     <div
@@ -67,8 +91,20 @@ function SectionNode({ node, sectionId }: ContainerRenderProps) {
         width: '100%',
       }}
     >
-      {renderChildren(node, sectionId)}
+      {renderChildren(node, sectionId, false)}
     </div>
+  )
+}
+
+function SectionNode({ node, sectionId }: ContainerRenderProps) {
+  const { padding = '24px', backgroundColor = '#ffffff', minHeight } = node.props
+  return (
+    <GridContainer
+      node={node}
+      sectionId={sectionId}
+      tag="div"
+      baseStyle={{ padding, backgroundColor, minHeight }}
+    />
   )
 }
 
@@ -95,6 +131,7 @@ function TextNode({ node }: ContainerRenderProps) {
         lineHeight,
         margin: 0,
         fontFamily: 'inherit',
+        width: '100%',
       }}
     >
       {content}
@@ -107,7 +144,7 @@ function ImageNode({ node }: ContainerRenderProps) {
     src = 'https://placehold.co/600x400/e2e8f0/94a3b8?text=Image',
     alt = 'Image',
     width = '100%',
-    height = 'auto',
+    height = '100%',
     borderRadius = '0px',
     objectFit = 'cover',
   } = node.props
@@ -161,91 +198,30 @@ function ButtonNode({ node }: ContainerRenderProps) {
 }
 
 function MenuBarNode({ node, sectionId }: ContainerRenderProps) {
-  const {
-    backgroundColor = '#09090b',
-    padding = '16px 32px',
-    gap = '24px',
-    minHeight,
-    freeLayout,
-  } = node.props
-
-  if (freeLayout) {
-    return (
-      <nav
-        style={{
-          position: 'relative',
-          backgroundColor,
-          padding,
-          minHeight,
-          width: '100%',
-        }}
-      >
-        {renderChildren(node, sectionId)}
-      </nav>
-    )
-  }
-
+  const { backgroundColor = '#09090b', padding = '16px 32px', minHeight } = node.props
   return (
-    <nav
-      style={{
-        backgroundColor,
-        padding,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap,
-        width: '100%',
-      }}
-    >
-      {renderChildren(node, sectionId)}
-    </nav>
+    <GridContainer
+      node={node}
+      sectionId={sectionId}
+      tag="nav"
+      baseStyle={{ backgroundColor, padding, minHeight }}
+    />
   )
 }
 
 function FooterNode({ node, sectionId }: ContainerRenderProps) {
-  const {
-    backgroundColor = '#09090b',
-    padding = '40px 24px',
-    gap = '16px',
-    minHeight,
-    freeLayout,
-  } = node.props
-
-  if (freeLayout) {
-    return (
-      <footer
-        style={{
-          position: 'relative',
-          backgroundColor,
-          padding,
-          minHeight,
-          width: '100%',
-        }}
-      >
-        {renderChildren(node, sectionId)}
-      </footer>
-    )
-  }
-
+  const { backgroundColor = '#09090b', padding = '40px 24px', minHeight } = node.props
   return (
-    <footer
-      style={{
-        backgroundColor,
-        padding,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap,
-        width: '100%',
-      }}
-    >
-      {renderChildren(node, sectionId)}
-    </footer>
+    <GridContainer
+      node={node}
+      sectionId={sectionId}
+      tag="footer"
+      baseStyle={{ backgroundColor, padding, minHeight }}
+    />
   )
 }
 
 const renderers: Record<string, React.FC<ContainerRenderProps>> = {
-  section: SectionNode,
   text: TextNode,
   image: ImageNode,
   button: ButtonNode,
@@ -253,8 +229,20 @@ const renderers: Record<string, React.FC<ContainerRenderProps>> = {
   footer: FooterNode,
 }
 
-export function NodeRenderer({ node, parentId, sectionId }: NodeRendererProps) {
-  const Renderer = renderers[node.type]
+export function NodeRenderer({
+  node,
+  parentId,
+  sectionId,
+  parentGridLayout,
+  indexInParent = 0,
+  isRoot = false,
+}: NodeRendererProps) {
+  const Renderer =
+    node.type === 'section'
+      ? isRoot
+        ? RootSectionNode
+        : SectionNode
+      : renderers[node.type]
   if (!Renderer) return null
 
   const effectiveSectionId = sectionId ?? (parentId ? node.id : undefined)
@@ -264,6 +252,8 @@ export function NodeRenderer({ node, parentId, sectionId }: NodeRendererProps) {
       node={node}
       parentId={parentId}
       sectionId={effectiveSectionId}
+      parentGridLayout={parentGridLayout}
+      indexInParent={indexInParent}
     >
       <Renderer node={node} sectionId={effectiveSectionId} />
     </SelectableWrapper>

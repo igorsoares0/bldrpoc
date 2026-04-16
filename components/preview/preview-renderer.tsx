@@ -1,56 +1,60 @@
 'use client'
 
-import type { CSSProperties } from 'react'
 import type { Node } from '@/lib/types'
+import {
+  buildGridStyles,
+  gridSectionClassName,
+  isLeafType,
+} from '@/lib/grid-utils'
 
 interface PreviewNodeProps {
   node: Node
+  insideGrid?: boolean
+  isRoot?: boolean
 }
 
-function positionedWrapper(
-  node: Node,
-  element: React.ReactElement,
-): React.ReactElement {
-  const { x, y, w } = node.props
-  if (typeof x !== 'number' || typeof y !== 'number') return element
-  const style: CSSProperties = {
-    position: 'absolute',
-    left: `${x}px`,
-    top: `${y}px`,
-    width: typeof w === 'number' ? `${w}px` : undefined,
-  }
-  return <div style={style}>{element}</div>
+function cssId(id: string): string {
+  return id.replace(/[^a-zA-Z0-9_-]/g, '_')
 }
 
-function SectionNode({ node }: PreviewNodeProps) {
-  const {
-    padding = '24px',
-    backgroundColor = '#ffffff',
-    flexDirection = 'column',
-    alignItems = 'stretch',
-    justifyContent = 'flex-start',
-    gap = '16px',
-    minHeight,
-    freeLayout,
-  } = node.props
-
-  if (freeLayout) {
-    return (
-      <div
+function GridSectionWrapper({
+  node,
+  tag: Tag,
+  baseStyle,
+}: {
+  node: Node
+  tag: 'div' | 'nav' | 'footer'
+  baseStyle: React.CSSProperties
+}) {
+  const css = buildGridStyles(node)
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: css }} />
+      <Tag
+        className={gridSectionClassName(node.id)}
         style={{
-          position: 'relative',
-          padding,
-          backgroundColor,
-          minHeight,
+          ...baseStyle,
           width: '100%',
         }}
       >
         {node.children?.map((child) => (
-          <PreviewNode key={child.id} node={child} />
+          <PreviewNode key={child.id} node={child} insideGrid={true} />
         ))}
-      </div>
-    )
-  }
+      </Tag>
+    </>
+  )
+}
+
+function RootSectionNode({ node }: PreviewNodeProps) {
+  const {
+    padding = '0px',
+    backgroundColor = '#ffffff',
+    flexDirection = 'column',
+    alignItems = 'stretch',
+    justifyContent = 'flex-start',
+    gap = '0px',
+    minHeight,
+  } = node.props
 
   return (
     <div
@@ -70,6 +74,17 @@ function SectionNode({ node }: PreviewNodeProps) {
         <PreviewNode key={child.id} node={child} />
       ))}
     </div>
+  )
+}
+
+function SectionNode({ node }: PreviewNodeProps) {
+  const { padding = '24px', backgroundColor = '#ffffff', minHeight } = node.props
+  return (
+    <GridSectionWrapper
+      node={node}
+      tag="div"
+      baseStyle={{ padding, backgroundColor, minHeight }}
+    />
   )
 }
 
@@ -96,6 +111,7 @@ function TextNode({ node }: PreviewNodeProps) {
         lineHeight,
         margin: 0,
         fontFamily: 'system-ui, sans-serif',
+        width: '100%',
       }}
     >
       {content}
@@ -108,7 +124,7 @@ function ImageNode({ node }: PreviewNodeProps) {
     src = 'https://placehold.co/600x400/e2e8f0/94a3b8?text=Image',
     alt = 'Image',
     width = '100%',
-    height = 'auto',
+    height = '100%',
     borderRadius = '0px',
     objectFit = 'cover',
   } = node.props
@@ -162,99 +178,28 @@ function ButtonNode({ node }: PreviewNodeProps) {
 }
 
 function MenuBarNode({ node }: PreviewNodeProps) {
-  const {
-    backgroundColor = '#09090b',
-    padding = '16px 32px',
-    gap = '24px',
-    minHeight,
-    freeLayout,
-  } = node.props
-
-  if (freeLayout) {
-    return (
-      <nav
-        style={{
-          position: 'relative',
-          backgroundColor,
-          padding,
-          minHeight,
-          width: '100%',
-        }}
-      >
-        {node.children?.map((child) => (
-          <PreviewNode key={child.id} node={child} />
-        ))}
-      </nav>
-    )
-  }
-
+  const { backgroundColor = '#09090b', padding = '16px 32px', minHeight } = node.props
   return (
-    <nav
-      style={{
-        backgroundColor,
-        padding,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap,
-        width: '100%',
-      }}
-    >
-      {node.children?.map((child) => (
-        <PreviewNode key={child.id} node={child} />
-      ))}
-    </nav>
+    <GridSectionWrapper
+      node={node}
+      tag="nav"
+      baseStyle={{ backgroundColor, padding, minHeight }}
+    />
   )
 }
 
 function FooterNode({ node }: PreviewNodeProps) {
-  const {
-    backgroundColor = '#09090b',
-    padding = '40px 24px',
-    gap = '16px',
-    minHeight,
-    freeLayout,
-  } = node.props
-
-  if (freeLayout) {
-    return (
-      <footer
-        style={{
-          position: 'relative',
-          backgroundColor,
-          padding,
-          minHeight,
-          width: '100%',
-        }}
-      >
-        {node.children?.map((child) => (
-          <PreviewNode key={child.id} node={child} />
-        ))}
-      </footer>
-    )
-  }
-
+  const { backgroundColor = '#09090b', padding = '40px 24px', minHeight } = node.props
   return (
-    <footer
-      style={{
-        backgroundColor,
-        padding,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap,
-        width: '100%',
-      }}
-    >
-      {node.children?.map((child) => (
-        <PreviewNode key={child.id} node={child} />
-      ))}
-    </footer>
+    <GridSectionWrapper
+      node={node}
+      tag="footer"
+      baseStyle={{ backgroundColor, padding, minHeight }}
+    />
   )
 }
 
 const renderers: Record<string, React.FC<PreviewNodeProps>> = {
-  section: SectionNode,
   text: TextNode,
   image: ImageNode,
   button: ButtonNode,
@@ -262,10 +207,19 @@ const renderers: Record<string, React.FC<PreviewNodeProps>> = {
   footer: FooterNode,
 }
 
-function PreviewNode({ node }: PreviewNodeProps) {
-  const Renderer = renderers[node.type]
+function PreviewNode({ node, insideGrid, isRoot }: PreviewNodeProps) {
+  const Renderer =
+    node.type === 'section'
+      ? isRoot
+        ? RootSectionNode
+        : SectionNode
+      : renderers[node.type]
   if (!Renderer) return null
-  return positionedWrapper(node, <Renderer node={node} />)
+  const element = <Renderer node={node} />
+  if (insideGrid && isLeafType(node.type)) {
+    return <div data-id={cssId(node.id)}>{element}</div>
+  }
+  return element
 }
 
 export function PreviewRenderer({ tree }: { tree: Node }) {
@@ -277,7 +231,7 @@ export function PreviewRenderer({ tree }: { tree: Node }) {
         fontFamily: 'system-ui, sans-serif',
       }}
     >
-      <PreviewNode node={tree} />
+      <PreviewNode node={tree} isRoot={true} />
     </div>
   )
 }

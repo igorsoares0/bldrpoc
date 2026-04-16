@@ -1,5 +1,19 @@
 export type NodeType = 'section' | 'text' | 'image' | 'button' | 'menu-bar' | 'footer'
 
+export type Viewport = 'desktop' | 'mobile'
+
+export type GridPlacement = {
+  col: number
+  row: number
+  colSpan: number
+  rowSpan: number
+}
+
+export type GridProps = {
+  desktop: GridPlacement
+  mobile?: GridPlacement
+}
+
 export type Node = {
   id: string
   type: NodeType

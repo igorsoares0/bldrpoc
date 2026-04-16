@@ -1,55 +1,60 @@
 'use client'
 
 import { create } from 'zustand'
-import type { Node, Page } from './types'
+import type { GridPlacement, Node, Page, Viewport } from './types'
 import {
   updateNodeById,
   removeNodeById,
   addNodeToParent,
 } from './tree-utils'
-
-export type ChildSnapshot = {
-  x: number
-  y: number
-  w: number
-  h: number
-}
+import {
+  collectLeaves,
+  defaultDesktopPlacement,
+  defaultMobilePlacement,
+  migrateTreeToGrid,
+  DEFAULT_ROW_HEIGHT,
+} from './grid-utils'
 
 export type DragSession = {
   id: string
   sectionId: string
-  offsetX: number
-  offsetY: number
-  snapshot: Record<string, ChildSnapshot>
-  sectionHeight: number
+  viewport: Viewport
+  cols: number
+  cellWidth: number
+  rowHeight: number
+  offsetCol: number
+  offsetRow: number
+  colSpan: number
+  rowSpan: number
+  snapshot: Record<string, GridPlacement>
 }
-
-const LEAF_TYPES = ['text', 'image', 'button']
 
 type EditorState = {
   page: Page | null
   tree: Node
   selectedId: string | null
-  viewport: 'desktop' | 'mobile'
+  viewport: Viewport
   isDirty: boolean
   isSaving: boolean
   dragSession: DragSession | null
+  dragGhost: GridPlacement | null
 
   initializeEditor: (page: Page) => void
   selectNode: (id: string | null) => void
   updateNode: (id: string, props: Record<string, any>) => void
   addNode: (parentId: string, node: Node) => void
   deleteNode: (id: string) => void
-  placeNode: (
+  placeNodeInGrid: (
     sectionId: string,
     draggedId: string,
-    pos: { x: number; y: number },
-    snapshot: Record<string, ChildSnapshot>,
-    sectionHeight: number,
+    placement: GridPlacement,
+    snapshot: Record<string, GridPlacement>,
+    viewport: Viewport,
   ) => void
   beginDrag: (session: DragSession) => void
+  setDragGhost: (ghost: GridPlacement | null) => void
   endDrag: () => void
-  setViewport: (v: 'desktop' | 'mobile') => void
+  setViewport: (v: Viewport) => void
   saveToServer: () => Promise<void>
   updatePageTitle: (title: string) => void
 }
@@ -61,6 +66,44 @@ const emptyTree: Node = {
   children: [],
 }
 
+function applyPlacementsToLeaves(
+  section: Node,
+  draggedId: string | null,
+  draggedPlacement: GridPlacement | null,
+  snapshot: Record<string, GridPlacement>,
+  viewport: Viewport,
+): Node {
+  const leaves = collectLeaves(section)
+  const newChildren = leaves.map((leaf, index) => {
+    const grid = (leaf.props.grid as { desktop?: GridPlacement; mobile?: GridPlacement } | undefined) ?? {}
+    let desktop = grid.desktop
+    let mobile = grid.mobile
+    const snap = snapshot[leaf.id]
+    const isDragged = leaf.id === draggedId
+
+    if (viewport === 'desktop') {
+      if (isDragged && draggedPlacement) desktop = draggedPlacement
+      else if (snap) desktop = desktop ?? snap
+      desktop = desktop ?? defaultDesktopPlacement(index)
+      mobile = mobile ?? defaultMobilePlacement(index)
+    } else {
+      if (isDragged && draggedPlacement) mobile = draggedPlacement
+      else if (snap) mobile = mobile ?? snap
+      mobile = mobile ?? defaultMobilePlacement(index)
+      desktop = desktop ?? defaultDesktopPlacement(index)
+    }
+
+    return {
+      ...leaf,
+      props: {
+        ...leaf.props,
+        grid: { desktop, mobile },
+      },
+    }
+  })
+  return { ...section, children: newChildren }
+}
+
 export const useEditorStore = create<EditorState>((set, get) => ({
   page: null,
   tree: emptyTree,
@@ -69,16 +112,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   isDirty: false,
   isSaving: false,
   dragSession: null,
+  dragGhost: null,
 
   initializeEditor: (page) => {
+    const { tree: migrated, changed } = migrateTreeToGrid(page.content)
     set({
       page,
-      tree: page.content,
+      tree: migrated,
       selectedId: null,
       viewport: 'desktop',
-      isDirty: false,
+      isDirty: changed,
       isSaving: false,
       dragSession: null,
+      dragGhost: null,
     })
   },
 
@@ -110,61 +156,30 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })
   },
 
-  placeNode: (sectionId, draggedId, pos, snapshot, sectionHeight) => {
+  placeNodeInGrid: (sectionId, draggedId, placement, snapshot, viewport) => {
     const { tree } = get()
     const newTree = updateNodeById(tree, sectionId, (section) => {
-      const leaves: Node[] = []
-      const walk = (n: Node) => {
-        if (n.id !== section.id && LEAF_TYPES.includes(n.type)) {
-          leaves.push(n)
-          return
-        }
-        n.children?.forEach(walk)
-      }
-      walk(section)
-
-      const newChildren = leaves.map((leaf) => {
-        const snap = snapshot[leaf.id]
-        if (leaf.id === draggedId) {
-          return {
-            ...leaf,
-            props: {
-              ...leaf.props,
-              x: pos.x,
-              y: pos.y,
-              w: snap?.w ?? leaf.props.w,
-            },
-          }
-        }
-        if (snap && leaf.props.x === undefined) {
-          return {
-            ...leaf,
-            props: {
-              ...leaf.props,
-              x: snap.x,
-              y: snap.y,
-              w: snap.w,
-            },
-          }
-        }
-        return leaf
-      })
-
+      const flattened = applyPlacementsToLeaves(
+        section,
+        draggedId,
+        placement,
+        snapshot,
+        viewport,
+      )
       return {
-        ...section,
+        ...flattened,
         props: {
-          ...section.props,
-          freeLayout: true,
-          minHeight: section.props.minHeight ?? `${sectionHeight}px`,
+          ...flattened.props,
+          rowHeight: section.props.rowHeight ?? DEFAULT_ROW_HEIGHT,
         },
-        children: newChildren,
       }
     })
     set({ tree: newTree, isDirty: true })
   },
 
-  beginDrag: (session) => set({ dragSession: session }),
-  endDrag: () => set({ dragSession: null }),
+  beginDrag: (session) => set({ dragSession: session, dragGhost: null }),
+  setDragGhost: (ghost) => set({ dragGhost: ghost }),
+  endDrag: () => set({ dragSession: null, dragGhost: null }),
 
   setViewport: (v) => set({ viewport: v }),
 

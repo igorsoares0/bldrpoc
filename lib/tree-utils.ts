@@ -38,6 +38,16 @@ export function removeNodeById(tree: Node, id: string): Node {
   return { ...tree, children: newChildren }
 }
 
+export function getParentOfNode(tree: Node, childId: string): Node | null {
+  if (!tree.children) return null
+  for (const child of tree.children) {
+    if (child.id === childId) return tree
+    const found = getParentOfNode(child, childId)
+    if (found) return found
+  }
+  return null
+}
+
 export function addNodeToParent(
   tree: Node,
   parentId: string,

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { pages } from '@/lib/storage'
 import { PreviewRenderer } from '@/components/preview/preview-renderer'
+import { migrateFreeLayoutToGrid } from '@/lib/grid-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,9 +13,11 @@ export default async function PreviewPage(
 
   if (!page) notFound()
 
+  const { tree } = migrateFreeLayoutToGrid(page.content)
+
   return (
     <div className="bg-white text-black min-h-screen">
-      <PreviewRenderer tree={page.content} />
+      <PreviewRenderer tree={tree} />
     </div>
   )
 }

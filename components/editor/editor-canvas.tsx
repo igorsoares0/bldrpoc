@@ -18,7 +18,7 @@ export function EditorCanvas() {
           viewport === 'desktop' ? 'w-full' : 'w-[375px]'
         }`}
       >
-        <NodeRenderer node={tree} />
+        <NodeRenderer node={tree} isRoot={true} />
       </div>
     </div>
   )

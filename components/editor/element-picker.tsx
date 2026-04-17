@@ -11,6 +11,7 @@ import {
   PanelBottom,
   Sparkles,
   Columns2,
+  LayoutGrid,
 } from 'lucide-react'
 import { useEditorStore } from '@/lib/store'
 import type { GridPlacement, Node, NodeType } from '@/lib/types'
@@ -369,6 +370,203 @@ const elements: ElementDef[] = [
             ...grid(
               { col: 13, row: 1, colSpan: 12, rowSpan: 16 },
               { col: 1, row: 1, colSpan: 8, rowSpan: 9 },
+            ),
+          },
+        },
+      ],
+    }),
+  },
+  {
+    type: 'section',
+    label: 'Features',
+    icon: LayoutGrid,
+    category: 'section',
+    createNode: () => ({
+      id: uid(),
+      type: 'section',
+      props: {
+        padding: '80px 32px',
+        backgroundColor: '#fafafa',
+        rowHeight: 24,
+        minHeight: '600px',
+      },
+      children: [
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content: 'Powerful Features',
+            variant: 'h2',
+            color: '#09090b',
+            fontSize: '36px',
+            fontWeight: '700',
+            textAlign: 'center',
+            ...grid(
+              { col: 4, row: 3, colSpan: 18, rowSpan: 3 },
+              { col: 1, row: 1, colSpan: 8, rowSpan: 4 },
+            ),
+          },
+        },
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content: 'Everything you need to build something amazing',
+            variant: 'p',
+            color: '#71717a',
+            fontSize: '16px',
+            fontWeight: '400',
+            textAlign: 'center',
+            ...grid(
+              { col: 6, row: 7, colSpan: 14, rowSpan: 2 },
+              { col: 1, row: 6, colSpan: 8, rowSpan: 3 },
+            ),
+          },
+        },
+        {
+          id: uid(),
+          type: 'image',
+          props: {
+            src: 'https://placehold.co/120x120/3b82f6/3b82f6',
+            alt: 'Feature 1 icon',
+            width: '64px',
+            height: '64px',
+            borderRadius: '14px',
+            objectFit: 'cover',
+            ...grid(
+              { col: 4, row: 13, colSpan: 2, rowSpan: 3 },
+              { col: 4, row: 11, colSpan: 2, rowSpan: 3 },
+            ),
+          },
+        },
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content: 'Lightning Fast',
+            variant: 'h3',
+            color: '#09090b',
+            fontSize: '20px',
+            fontWeight: '600',
+            textAlign: 'center',
+            ...grid(
+              { col: 1, row: 17, colSpan: 8, rowSpan: 2 },
+              { col: 1, row: 15, colSpan: 8, rowSpan: 2 },
+            ),
+          },
+        },
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content: 'Built for speed with optimized performance and instant loading.',
+            variant: 'p',
+            color: '#71717a',
+            fontSize: '14px',
+            fontWeight: '400',
+            textAlign: 'center',
+            lineHeight: '1.6',
+            ...grid(
+              { col: 1, row: 19, colSpan: 8, rowSpan: 4 },
+              { col: 1, row: 17, colSpan: 8, rowSpan: 4 },
+            ),
+          },
+        },
+        {
+          id: uid(),
+          type: 'image',
+          props: {
+            src: 'https://placehold.co/120x120/8b5cf6/8b5cf6',
+            alt: 'Feature 2 icon',
+            width: '64px',
+            height: '64px',
+            borderRadius: '14px',
+            objectFit: 'cover',
+            ...grid(
+              { col: 12, row: 13, colSpan: 2, rowSpan: 3 },
+              { col: 4, row: 24, colSpan: 2, rowSpan: 3 },
+            ),
+          },
+        },
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content: 'Beautiful Design',
+            variant: 'h3',
+            color: '#09090b',
+            fontSize: '20px',
+            fontWeight: '600',
+            textAlign: 'center',
+            ...grid(
+              { col: 9, row: 17, colSpan: 8, rowSpan: 2 },
+              { col: 1, row: 28, colSpan: 8, rowSpan: 2 },
+            ),
+          },
+        },
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content: 'Pixel-perfect designs that look stunning on every device.',
+            variant: 'p',
+            color: '#71717a',
+            fontSize: '14px',
+            fontWeight: '400',
+            textAlign: 'center',
+            lineHeight: '1.6',
+            ...grid(
+              { col: 9, row: 19, colSpan: 8, rowSpan: 4 },
+              { col: 1, row: 30, colSpan: 8, rowSpan: 4 },
+            ),
+          },
+        },
+        {
+          id: uid(),
+          type: 'image',
+          props: {
+            src: 'https://placehold.co/120x120/10b981/10b981',
+            alt: 'Feature 3 icon',
+            width: '64px',
+            height: '64px',
+            borderRadius: '14px',
+            objectFit: 'cover',
+            ...grid(
+              { col: 20, row: 13, colSpan: 2, rowSpan: 3 },
+              { col: 4, row: 37, colSpan: 2, rowSpan: 3 },
+            ),
+          },
+        },
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content: 'Rock Solid',
+            variant: 'h3',
+            color: '#09090b',
+            fontSize: '20px',
+            fontWeight: '600',
+            textAlign: 'center',
+            ...grid(
+              { col: 17, row: 17, colSpan: 8, rowSpan: 2 },
+              { col: 1, row: 41, colSpan: 8, rowSpan: 2 },
+            ),
+          },
+        },
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content: 'Battle-tested infrastructure with 99.9% uptime guarantee.',
+            variant: 'p',
+            color: '#71717a',
+            fontSize: '14px',
+            fontWeight: '400',
+            textAlign: 'center',
+            lineHeight: '1.6',
+            ...grid(
+              { col: 17, row: 19, colSpan: 8, rowSpan: 4 },
+              { col: 1, row: 43, colSpan: 8, rowSpan: 4 },
             ),
           },
         },

@@ -111,7 +111,7 @@ function TextNode({ node }: PreviewNodeProps) {
         lineHeight,
         margin: 0,
         fontFamily: 'system-ui, sans-serif',
-        width: '100%',
+        maxWidth: '100%',
       }}
     >
       {content}

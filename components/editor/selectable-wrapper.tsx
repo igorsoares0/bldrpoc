@@ -63,6 +63,16 @@ function readSectionMetrics(
   }
 }
 
+function leafFitStyle(node: Node): CSSProperties {
+  if (node.type === 'text') {
+    const ta = node.props.textAlign as string | undefined
+    const justifySelf =
+      ta === 'right' ? 'end' : ta === 'center' ? 'center' : 'start'
+    return { justifySelf, alignSelf: 'center', minWidth: 0 }
+  }
+  return { justifySelf: 'center', alignSelf: 'center', minWidth: 0 }
+}
+
 function rectToPlacement(
   childRect: DOMRect,
   metrics: SectionMetrics,
@@ -107,9 +117,7 @@ export function SelectableWrapper({
     parentGridLayout && isLeaf
       ? {
           ...placementToStyle(getActivePlacement(node, viewport, indexInParent)),
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          ...leafFitStyle(node),
         }
       : {}
 

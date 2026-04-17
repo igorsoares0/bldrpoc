@@ -131,7 +131,7 @@ function TextNode({ node }: ContainerRenderProps) {
         lineHeight,
         margin: 0,
         fontFamily: 'inherit',
-        width: '100%',
+        maxWidth: '100%',
       }}
     >
       {content}

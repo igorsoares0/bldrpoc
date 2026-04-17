@@ -116,6 +116,15 @@ export function collectLeaves(node: Node): Node[] {
   return out
 }
 
+function leafFitCss(leaf: Node): string {
+  if (leaf.type === 'text') {
+    const ta = leaf.props.textAlign as string | undefined
+    const justify = ta === 'right' ? 'end' : ta === 'center' ? 'center' : 'start'
+    return `justify-self:${justify};align-self:center;min-width:0;`
+  }
+  return 'justify-self:center;align-self:center;min-width:0;'
+}
+
 export function buildGridStyles(section: Node): string {
   const sectionId = section.id
   const rowHeight = section.props.rowHeight ?? DEFAULT_ROW_HEIGHT
@@ -126,7 +135,7 @@ export function buildGridStyles(section: Node): string {
   const desktopRules = leaves
     .map((leaf, i) => {
       const p = getActivePlacement(leaf, 'desktop', i)
-      return `.${cls} > [data-id="${cssId(leaf.id)}"]{grid-column:${p.col}/span ${p.colSpan};grid-row:${p.row}/span ${p.rowSpan};display:flex;align-items:center;justify-content:center;}`
+      return `.${cls} > [data-id="${cssId(leaf.id)}"]{grid-column:${p.col}/span ${p.colSpan};grid-row:${p.row}/span ${p.rowSpan};${leafFitCss(leaf)}}`
     })
     .join('')
 

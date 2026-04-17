@@ -99,7 +99,9 @@ export function SelectableWrapper({
   children,
 }: SelectableWrapperProps) {
   const selectedId = useEditorStore((s) => s.selectedId)
+  const editingId = useEditorStore((s) => s.editingId)
   const selectNode = useEditorStore((s) => s.selectNode)
+  const beginTextEdit = useEditorStore((s) => s.beginTextEdit)
   const dragSession = useEditorStore((s) => s.dragSession)
   const beginDrag = useEditorStore((s) => s.beginDrag)
   const endDrag = useEditorStore((s) => s.endDrag)
@@ -109,8 +111,10 @@ export function SelectableWrapper({
 
   const { id: nodeId, type: nodeType } = node
   const isSelected = selectedId === nodeId
+  const isEditing = editingId === nodeId
   const isLeaf = isLeafType(nodeType)
-  const isDraggable = isLeaf && Boolean(parentGridLayout) && Boolean(sectionId)
+  const isDraggable =
+    isLeaf && Boolean(parentGridLayout) && Boolean(sectionId) && !isEditing
   const isSectionRoot = Boolean(sectionId) && nodeId === sectionId
 
   const placementStyle: CSSProperties =
@@ -270,11 +274,21 @@ export function SelectableWrapper({
         endDrag()
       }}
       onClick={(e) => {
+        if (isEditing) return
         e.stopPropagation()
         selectNode(nodeId)
       }}
+      onDoubleClick={(e) => {
+        if (nodeType !== 'text') return
+        e.stopPropagation()
+        beginTextEdit(nodeId)
+      }}
       className={`relative group/sel transition-all duration-150 ${
-        isDraggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+        isEditing
+          ? 'cursor-text'
+          : isDraggable
+            ? 'cursor-grab active:cursor-grabbing'
+            : 'cursor-pointer'
       } ${
         isSelected
           ? 'ring-2 ring-accent ring-offset-1 ring-offset-white rounded-sm'

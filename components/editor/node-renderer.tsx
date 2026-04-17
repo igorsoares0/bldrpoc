@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { SelectableWrapper } from './selectable-wrapper'
 import { GridOverlay } from './grid-overlay'
 import { useEditorStore } from '@/lib/store'
@@ -109,6 +110,12 @@ function SectionNode({ node, sectionId }: ContainerRenderProps) {
 }
 
 function TextNode({ node }: ContainerRenderProps) {
+  const editingId = useEditorStore((s) => s.editingId)
+  const updateNode = useEditorStore((s) => s.updateNode)
+  const endTextEdit = useEditorStore((s) => s.endTextEdit)
+  const isEditing = editingId === node.id
+  const ref = useRef<HTMLElement | null>(null)
+
   const {
     content = 'Text',
     variant = 'p',
@@ -121,8 +128,48 @@ function TextNode({ node }: ContainerRenderProps) {
 
   const Tag = variant as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p'
 
+  useLayoutEffect(() => {
+    if (!ref.current) return
+    if (!isEditing && ref.current.textContent !== content) {
+      ref.current.textContent = content
+    }
+  }, [content, isEditing])
+
+  useEffect(() => {
+    if (!isEditing || !ref.current) return
+    ref.current.focus()
+    const range = document.createRange()
+    range.selectNodeContents(ref.current)
+    range.collapse(false)
+    const sel = window.getSelection()
+    sel?.removeAllRanges()
+    sel?.addRange(range)
+  }, [isEditing])
+
   return (
     <Tag
+      ref={(el) => {
+        ref.current = el
+        if (el && !isEditing && el.textContent !== content) {
+          el.textContent = content
+        }
+      }}
+      contentEditable={isEditing}
+      suppressContentEditableWarning
+      onBlur={(e) => {
+        if (!isEditing) return
+        const next = (e.currentTarget as HTMLElement).innerText
+        if (next !== content) updateNode(node.id, { content: next })
+        endTextEdit()
+      }}
+      onKeyDown={(e) => {
+        if (!isEditing) return
+        if (e.key === 'Escape' || e.key === 'Enter') {
+          e.preventDefault()
+          e.stopPropagation()
+          ;(e.currentTarget as HTMLElement).blur()
+        }
+      }}
       style={{
         color,
         fontSize,
@@ -132,10 +179,10 @@ function TextNode({ node }: ContainerRenderProps) {
         margin: 0,
         fontFamily: 'inherit',
         maxWidth: '100%',
+        outline: isEditing ? 'none' : undefined,
+        cursor: isEditing ? 'text' : undefined,
       }}
-    >
-      {content}
-    </Tag>
+    />
   )
 }
 

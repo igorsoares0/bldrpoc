@@ -33,6 +33,7 @@ type EditorState = {
   page: Page | null
   tree: Node
   selectedId: string | null
+  editingId: string | null
   viewport: Viewport
   isDirty: boolean
   isSaving: boolean
@@ -41,6 +42,8 @@ type EditorState = {
 
   initializeEditor: (page: Page) => void
   selectNode: (id: string | null) => void
+  beginTextEdit: (id: string) => void
+  endTextEdit: () => void
   updateNode: (id: string, props: Record<string, any>) => void
   addNode: (parentId: string, node: Node) => void
   deleteNode: (id: string) => void
@@ -108,6 +111,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   page: null,
   tree: emptyTree,
   selectedId: null,
+  editingId: null,
   viewport: 'desktop',
   isDirty: false,
   isSaving: false,
@@ -120,6 +124,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       page,
       tree: migrated,
       selectedId: null,
+      editingId: null,
       viewport: 'desktop',
       isDirty: changed,
       isSaving: false,
@@ -128,7 +133,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })
   },
 
-  selectNode: (id) => set({ selectedId: id }),
+  selectNode: (id) =>
+    set((state) => ({
+      selectedId: id,
+      editingId: state.editingId !== id ? null : state.editingId,
+    })),
+
+  beginTextEdit: (id) => set({ editingId: id, selectedId: id }),
+  endTextEdit: () => set({ editingId: null }),
 
   updateNode: (id, props) => {
     const { tree } = get()

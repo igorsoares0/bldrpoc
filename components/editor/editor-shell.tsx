@@ -24,6 +24,16 @@ export function EditorShell({ initialPage }: EditorShellProps) {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      const editingId = useEditorStore.getState().editingId
+      const targetIsEditable =
+        e.target instanceof HTMLElement && e.target.isContentEditable
+      if (editingId || targetIsEditable) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+          e.preventDefault()
+          useEditorStore.getState().saveToServer()
+        }
+        return
+      }
       if (
         (e.key === 'Delete' || e.key === 'Backspace') &&
         selectedId &&

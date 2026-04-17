@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowLeft, Monitor, Smartphone, Save, Loader2 } from 'lucide-react'
+import { ArrowLeft, Monitor, Smartphone, Save, Loader2, Undo2, Redo2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEditorStore } from '@/lib/store'
 import { ElementPicker } from './element-picker'
@@ -14,6 +14,10 @@ export function EditorToolbar() {
   const isSaving = useEditorStore((s) => s.isSaving)
   const saveToServer = useEditorStore((s) => s.saveToServer)
   const updatePageTitle = useEditorStore((s) => s.updatePageTitle)
+  const undo = useEditorStore((s) => s.undo)
+  const redo = useEditorStore((s) => s.redo)
+  const canUndo = useEditorStore((s) => s.past.length > 0)
+  const canRedo = useEditorStore((s) => s.future.length > 0)
 
   return (
     <div className="flex h-14 items-center justify-between border-b border-surface-3 bg-surface-1 px-4">
@@ -39,6 +43,27 @@ export function EditorToolbar() {
 
       <div className="flex items-center gap-2">
         <ElementPicker />
+
+        <div className="h-5 w-px bg-surface-3 mx-1" />
+
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={undo}
+            disabled={!canUndo}
+            className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-surface-2 hover:text-text-primary cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+            title="Undo (Cmd+Z)"
+          >
+            <Undo2 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={redo}
+            disabled={!canRedo}
+            className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-surface-2 hover:text-text-primary cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+            title="Redo (Cmd+Shift+Z)"
+          >
+            <Redo2 className="h-4 w-4" />
+          </button>
+        </div>
 
         <div className="h-5 w-px bg-surface-3 mx-1" />
 

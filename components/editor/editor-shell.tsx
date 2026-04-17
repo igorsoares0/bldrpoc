@@ -51,6 +51,15 @@ export function EditorShell({ initialPage }: EditorShellProps) {
         e.preventDefault()
         useEditorStore.getState().saveToServer()
       }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        e.preventDefault()
+        if (e.shiftKey) useEditorStore.getState().redo()
+        else useEditorStore.getState().undo()
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'y') {
+        e.preventDefault()
+        useEditorStore.getState().redo()
+      }
     }
 
     document.addEventListener('keydown', handleKeyDown)

@@ -29,6 +29,8 @@ export type DragSession = {
   snapshot: Record<string, GridPlacement>
 }
 
+const HISTORY_LIMIT = 50
+
 type EditorState = {
   page: Page | null
   tree: Node
@@ -39,6 +41,8 @@ type EditorState = {
   isSaving: boolean
   dragSession: DragSession | null
   dragGhost: GridPlacement | null
+  past: Node[]
+  future: Node[]
 
   initializeEditor: (page: Page) => void
   selectNode: (id: string | null) => void
@@ -54,12 +58,20 @@ type EditorState = {
     snapshot: Record<string, GridPlacement>,
     viewport: Viewport,
   ) => void
+  undo: () => void
+  redo: () => void
   beginDrag: (session: DragSession) => void
   setDragGhost: (ghost: GridPlacement | null) => void
   endDrag: () => void
   setViewport: (v: Viewport) => void
   saveToServer: () => Promise<void>
   updatePageTitle: (title: string) => void
+}
+
+function pushHistory(past: Node[], current: Node): Node[] {
+  const next = past.concat(current)
+  if (next.length > HISTORY_LIMIT) next.shift()
+  return next
 }
 
 const emptyTree: Node = {
@@ -117,6 +129,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   isSaving: false,
   dragSession: null,
   dragGhost: null,
+  past: [],
+  future: [],
 
   initializeEditor: (page) => {
     const { tree: migrated, changed } = migrateTreeToGrid(page.content)
@@ -130,6 +144,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       isSaving: false,
       dragSession: null,
       dragGhost: null,
+      past: [],
+      future: [],
     })
   },
 
@@ -143,33 +159,46 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   endTextEdit: () => set({ editingId: null }),
 
   updateNode: (id, props) => {
-    const { tree } = get()
+    const { tree, past } = get()
     const newTree = updateNodeById(tree, id, (node) => ({
       ...node,
       props: { ...node.props, ...props },
     }))
-    set({ tree: newTree, isDirty: true })
+    set({
+      tree: newTree,
+      isDirty: true,
+      past: pushHistory(past, tree),
+      future: [],
+    })
   },
 
   addNode: (parentId, node) => {
-    const { tree } = get()
+    const { tree, past } = get()
     const newTree = addNodeToParent(tree, parentId, node)
-    set({ tree: newTree, isDirty: true, selectedId: node.id })
+    set({
+      tree: newTree,
+      isDirty: true,
+      selectedId: node.id,
+      past: pushHistory(past, tree),
+      future: [],
+    })
   },
 
   deleteNode: (id) => {
-    const { tree, selectedId } = get()
+    const { tree, selectedId, past } = get()
     if (id === tree.id) return
     const newTree = removeNodeById(tree, id)
     set({
       tree: newTree,
       isDirty: true,
       selectedId: selectedId === id ? null : selectedId,
+      past: pushHistory(past, tree),
+      future: [],
     })
   },
 
   placeNodeInGrid: (sectionId, draggedId, placement, snapshot, viewport) => {
-    const { tree } = get()
+    const { tree, past } = get()
     const newTree = updateNodeById(tree, sectionId, (section) => {
       const flattened = applyPlacementsToLeaves(
         section,
@@ -186,7 +215,38 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         },
       }
     })
-    set({ tree: newTree, isDirty: true })
+    set({
+      tree: newTree,
+      isDirty: true,
+      past: pushHistory(past, tree),
+      future: [],
+    })
+  },
+
+  undo: () => {
+    const { past, future, tree } = get()
+    if (past.length === 0) return
+    const previous = past[past.length - 1]
+    set({
+      tree: previous,
+      past: past.slice(0, -1),
+      future: future.concat(tree),
+      isDirty: true,
+      editingId: null,
+    })
+  },
+
+  redo: () => {
+    const { past, future, tree } = get()
+    if (future.length === 0) return
+    const next = future[future.length - 1]
+    set({
+      tree: next,
+      past: past.concat(tree),
+      future: future.slice(0, -1),
+      isDirty: true,
+      editingId: null,
+    })
   },
 
   beginDrag: (session) => set({ dragSession: session, dragGhost: null }),

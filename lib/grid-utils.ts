@@ -161,7 +161,7 @@ function leafFitCss(leaf: Node): string {
     const justify = ta === 'right' ? 'end' : ta === 'center' ? 'center' : 'start'
     return `justify-self:${justify};align-self:center;min-width:0;`
   }
-  if (leaf.type === 'button') {
+  if (leaf.type === 'button' || leaf.type === 'image') {
     return 'justify-self:stretch;align-self:stretch;min-width:0;'
   }
   return 'justify-self:center;align-self:center;min-width:0;'

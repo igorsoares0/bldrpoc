@@ -74,7 +74,7 @@ function leafFitStyle(node: Node): CSSProperties {
       ta === 'right' ? 'end' : ta === 'center' ? 'center' : 'start'
     return { justifySelf, alignSelf: 'center', minWidth: 0 }
   }
-  if (node.type === 'button') {
+  if (node.type === 'button' || node.type === 'image') {
     return { justifySelf: 'stretch', alignSelf: 'stretch', minWidth: 0 }
   }
   return { justifySelf: 'center', alignSelf: 'center', minWidth: 0 }
@@ -135,7 +135,7 @@ export function SelectableWrapper({
   const isSectionRoot = Boolean(sectionId) && nodeId === sectionId
   const showResizeHandles =
     isSelected &&
-    nodeType === 'button' &&
+    (nodeType === 'button' || nodeType === 'image') &&
     Boolean(parentGridLayout) &&
     Boolean(sectionId)
 

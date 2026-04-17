@@ -96,6 +96,45 @@ export function clampPlacement(
   return { col, row, colSpan, rowSpan }
 }
 
+export type ResizeAnchor = 'nw' | 'ne' | 'sw' | 'se'
+
+export function computeResizePlacement(
+  anchor: ResizeAnchor,
+  cursorX: number,
+  cursorY: number,
+  start: GridPlacement,
+  metrics: { contentLeft: number; contentTop: number; cellWidth: number; rowHeight: number },
+  cols: number,
+): GridPlacement {
+  const cursorCol =
+    Math.round((cursorX - metrics.contentLeft) / metrics.cellWidth) + 1
+  const cursorRow =
+    Math.round((cursorY - metrics.contentTop) / metrics.rowHeight) + 1
+  const origEndCol = start.col + start.colSpan - 1
+  const origEndRow = start.row + start.rowSpan - 1
+
+  let col = start.col
+  let row = start.row
+  let colSpan = start.colSpan
+  let rowSpan = start.rowSpan
+
+  if (anchor === 'nw' || anchor === 'sw') {
+    col = Math.max(1, Math.min(cursorCol, origEndCol))
+    colSpan = origEndCol - col + 1
+  } else {
+    colSpan = Math.max(1, Math.min(cursorCol - col + 1, cols - col + 1))
+  }
+
+  if (anchor === 'nw' || anchor === 'ne') {
+    row = Math.max(1, Math.min(cursorRow, origEndRow))
+    rowSpan = origEndRow - row + 1
+  } else {
+    rowSpan = Math.max(1, cursorRow - row + 1)
+  }
+
+  return clampPlacement({ col, row, colSpan, rowSpan }, cols)
+}
+
 export function placementToStyle(placement: GridPlacement) {
   return {
     gridColumn: `${placement.col} / span ${placement.colSpan}`,
@@ -121,6 +160,9 @@ function leafFitCss(leaf: Node): string {
     const ta = leaf.props.textAlign as string | undefined
     const justify = ta === 'right' ? 'end' : ta === 'center' ? 'center' : 'start'
     return `justify-self:${justify};align-self:center;min-width:0;`
+  }
+  if (leaf.type === 'button') {
+    return 'justify-self:stretch;align-self:stretch;min-width:0;'
   }
   return 'justify-self:center;align-self:center;min-width:0;'
 }

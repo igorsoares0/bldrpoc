@@ -62,11 +62,27 @@ export function TextProps({ node }: { node: Node }) {
         </select>
       </div>
 
-      <Input
-        label="Font Size"
-        value={node.props.fontSize || '16px'}
-        onChange={(e) => updateNode(node.id, { fontSize: e.target.value })}
-      />
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-text-secondary">
+          Font Size
+        </label>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min={8}
+            max={200}
+            step={1}
+            value={parseFloat(String(node.props.fontSize ?? '16')) || 16}
+            onChange={(e) => {
+              const n = parseFloat(e.target.value)
+              if (!Number.isFinite(n)) return
+              updateNode(node.id, { fontSize: `${Math.max(1, Math.round(n))}px` })
+            }}
+            className="h-9 w-full rounded-lg border border-surface-3 bg-surface-2 px-3 text-sm text-text-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          />
+          <span className="text-xs text-text-muted">px</span>
+        </div>
+      </div>
 
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-text-secondary">

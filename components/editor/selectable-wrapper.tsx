@@ -1,17 +1,21 @@
 'use client'
 
-import { type CSSProperties } from 'react'
+import { useRef, useState, type CSSProperties } from 'react'
 import { useEditorStore, type DragSession } from '@/lib/store'
 import { getNodeById } from '@/lib/tree-utils'
 import {
   clampPlacement,
   colsForViewport,
+  computeResizePlacement,
   DEFAULT_ROW_HEIGHT,
+  defaultDesktopPlacement,
+  defaultMobilePlacement,
   getActivePlacement,
   isLeafType,
   placementToStyle,
+  type ResizeAnchor,
 } from '@/lib/grid-utils'
-import type { GridPlacement, Node, NodeType } from '@/lib/types'
+import type { GridPlacement, GridProps, Node, NodeType } from '@/lib/types'
 
 const typeLabels: Record<NodeType, string> = {
   section: 'Section',
@@ -70,6 +74,9 @@ function leafFitStyle(node: Node): CSSProperties {
       ta === 'right' ? 'end' : ta === 'center' ? 'center' : 'start'
     return { justifySelf, alignSelf: 'center', minWidth: 0 }
   }
+  if (node.type === 'button') {
+    return { justifySelf: 'stretch', alignSelf: 'stretch', minWidth: 0 }
+  }
   return { justifySelf: 'center', alignSelf: 'center', minWidth: 0 }
 }
 
@@ -107,23 +114,114 @@ export function SelectableWrapper({
   const endDrag = useEditorStore((s) => s.endDrag)
   const setDragGhost = useEditorStore((s) => s.setDragGhost)
   const placeNodeInGrid = useEditorStore((s) => s.placeNodeInGrid)
+  const updateNode = useEditorStore((s) => s.updateNode)
   const viewport = useEditorStore((s) => s.viewport)
+
+  const [resizePreview, setResizePreview] = useState<GridPlacement | null>(null)
+  const resizingRef = useRef(false)
+  const wrapperRef = useRef<HTMLDivElement | null>(null)
 
   const { id: nodeId, type: nodeType } = node
   const isSelected = selectedId === nodeId
   const isEditing = editingId === nodeId
   const isLeaf = isLeafType(nodeType)
+  const isResizing = resizePreview !== null
   const isDraggable =
-    isLeaf && Boolean(parentGridLayout) && Boolean(sectionId) && !isEditing
+    isLeaf &&
+    Boolean(parentGridLayout) &&
+    Boolean(sectionId) &&
+    !isEditing &&
+    !isResizing
   const isSectionRoot = Boolean(sectionId) && nodeId === sectionId
+  const showResizeHandles =
+    isSelected &&
+    nodeType === 'button' &&
+    Boolean(parentGridLayout) &&
+    Boolean(sectionId)
+
+  const activePlacement = getActivePlacement(node, viewport, indexInParent)
+  const effectivePlacement = resizePreview ?? activePlacement
 
   const placementStyle: CSSProperties =
     parentGridLayout && isLeaf
       ? {
-          ...placementToStyle(getActivePlacement(node, viewport, indexInParent)),
+          ...placementToStyle(effectivePlacement),
           ...leafFitStyle(node),
         }
       : {}
+
+  function startResize(e: React.MouseEvent, anchor: ResizeAnchor) {
+    if (!sectionId) return
+    e.stopPropagation()
+    e.preventDefault()
+    resizingRef.current = true
+
+    const sectionEl = document.querySelector<HTMLElement>(
+      `[data-grid-section][data-node-id="${sectionId}"]`,
+    )
+    if (!sectionEl) {
+      resizingRef.current = false
+      return
+    }
+
+    const cols = colsForViewport(viewport)
+    const sectionNode = getNodeById(useEditorStore.getState().tree, sectionId)
+    const rowHeight = sectionNode?.props.rowHeight ?? DEFAULT_ROW_HEIGHT
+    const metrics = readSectionMetrics(sectionEl, cols, rowHeight)
+    const start = activePlacement
+
+    function onMove(ev: MouseEvent) {
+      const placement = computeResizePlacement(
+        anchor,
+        ev.clientX,
+        ev.clientY,
+        start,
+        metrics,
+        cols,
+      )
+      setResizePreview(placement)
+    }
+
+    function onUp(ev: MouseEvent) {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      const placement = computeResizePlacement(
+        anchor,
+        ev.clientX,
+        ev.clientY,
+        start,
+        metrics,
+        cols,
+      )
+      setResizePreview(null)
+      setTimeout(() => {
+        resizingRef.current = false
+      }, 0)
+      const current = getNodeById(useEditorStore.getState().tree, nodeId)
+      if (!current) return
+      const grid = (current.props.grid as GridProps | undefined) ?? {
+        desktop: defaultDesktopPlacement(indexInParent),
+        mobile: defaultMobilePlacement(indexInParent),
+      }
+      const nextGrid: GridProps =
+        viewport === 'desktop'
+          ? { ...grid, desktop: placement }
+          : { ...grid, mobile: placement }
+      updateNode(nodeId, { grid: nextGrid })
+    }
+
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
+
+  const suppressDragOnHandle = () => {
+    if (wrapperRef.current) wrapperRef.current.draggable = false
+  }
+  const restoreDragOnHandleLeave = () => {
+    if (wrapperRef.current && isDraggable && !resizingRef.current) {
+      wrapperRef.current.draggable = true
+    }
+  }
 
   const canAcceptDrop =
     isSectionRoot &&
@@ -134,11 +232,16 @@ export function SelectableWrapper({
 
   return (
     <div
+      ref={wrapperRef}
       data-node-id={nodeId}
       data-node-type={nodeType}
       style={placementStyle}
       draggable={isDraggable}
       onDragStart={(e) => {
+        if (resizingRef.current) {
+          e.preventDefault()
+          return
+        }
         if (!isDraggable || !sectionId) return
         e.stopPropagation()
 
@@ -283,7 +386,7 @@ export function SelectableWrapper({
         e.stopPropagation()
         beginTextEdit(nodeId)
       }}
-      className={`relative group/sel transition-all duration-150 ${
+      className={`relative group/sel ${isResizing ? '' : 'transition-all duration-150'} ${
         isEditing
           ? 'cursor-text'
           : isDraggable
@@ -304,6 +407,28 @@ export function SelectableWrapper({
       {isDropTarget && (
         <span className="pointer-events-none absolute inset-0 ring-2 ring-inset ring-accent/40 rounded-sm z-20" />
       )}
+      {showResizeHandles &&
+        (['nw', 'ne', 'sw', 'se'] as const).map((anchor) => (
+          <span
+            key={anchor}
+            onMouseEnter={suppressDragOnHandle}
+            onMouseLeave={restoreDragOnHandleLeave}
+            onMouseDown={(e) => startResize(e, anchor)}
+            onClick={(e) => e.stopPropagation()}
+            draggable={false}
+            className="absolute z-30 h-2.5 w-2.5 rounded-sm border border-white bg-accent shadow"
+            style={{
+              top: anchor.startsWith('n') ? -5 : undefined,
+              bottom: anchor.startsWith('s') ? -5 : undefined,
+              left: anchor.endsWith('w') ? -5 : undefined,
+              right: anchor.endsWith('e') ? -5 : undefined,
+              cursor:
+                anchor === 'nw' || anchor === 'se'
+                  ? 'nwse-resize'
+                  : 'nesw-resize',
+            }}
+          />
+        ))}
     </div>
   )
 }

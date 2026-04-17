@@ -170,6 +170,8 @@ function ButtonNode({ node }: PreviewNodeProps) {
         border: 'none',
         cursor: 'pointer',
         fontFamily: 'system-ui, sans-serif',
+        width: '100%',
+        height: '100%',
       }}
     >
       {label}

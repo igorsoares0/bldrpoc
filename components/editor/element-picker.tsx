@@ -12,6 +12,7 @@ import {
   Sparkles,
   Columns2,
   LayoutGrid,
+  Mail,
 } from 'lucide-react'
 import { useEditorStore } from '@/lib/store'
 import type { GridPlacement, Node, NodeType } from '@/lib/types'
@@ -106,6 +107,31 @@ const elements: ElementDef[] = [
         paddingY: '12px',
         fontSize: '16px',
         fontWeight: '600',
+      },
+    }),
+  },
+  {
+    type: 'form',
+    label: 'Email Form',
+    icon: Mail,
+    category: 'element',
+    createNode: () => ({
+      id: uid(),
+      type: 'form',
+      props: {
+        placeholder: 'your@email.com',
+        buttonLabel: 'Subscribe',
+        successMessage: 'Thanks! Check your inbox.',
+        backgroundColor: '#ffffff',
+        borderColor: '#e4e4e7',
+        inputColor: '#09090b',
+        buttonBackgroundColor: '#3b82f6',
+        buttonColor: '#ffffff',
+        borderRadius: '8px',
+        paddingX: '14px',
+        paddingY: '10px',
+        gap: '8px',
+        fontSize: '14px',
       },
     }),
   },

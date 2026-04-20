@@ -246,6 +246,74 @@ function ButtonNode({ node }: ContainerRenderProps) {
   )
 }
 
+function FormNode({ node }: ContainerRenderProps) {
+  const {
+    placeholder = 'your@email.com',
+    buttonLabel = 'Subscribe',
+    backgroundColor = '#ffffff',
+    borderColor = '#e4e4e7',
+    borderRadius = '8px',
+    inputColor = '#09090b',
+    buttonBackgroundColor = '#3b82f6',
+    buttonColor = '#ffffff',
+    fontSize = '14px',
+    paddingX = '14px',
+    paddingY = '10px',
+    gap = '8px',
+  } = node.props
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        gap,
+        alignItems: 'stretch',
+        width: '100%',
+        height: '100%',
+      }}
+    >
+      <input
+        type="email"
+        placeholder={placeholder}
+        readOnly
+        tabIndex={-1}
+        onMouseDown={(e) => e.preventDefault()}
+        style={{
+          flex: 1,
+          minWidth: 0,
+          backgroundColor,
+          color: inputColor,
+          border: `1px solid ${borderColor}`,
+          borderRadius,
+          padding: `${paddingY} ${paddingX}`,
+          fontSize,
+          fontFamily: 'inherit',
+          outline: 'none',
+          pointerEvents: 'none',
+        }}
+      />
+      <div
+        role="presentation"
+        style={{
+          backgroundColor: buttonBackgroundColor,
+          color: buttonColor,
+          borderRadius,
+          padding: `${paddingY} ${paddingX}`,
+          fontSize,
+          fontWeight: 600,
+          fontFamily: 'inherit',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {buttonLabel}
+      </div>
+    </div>
+  )
+}
+
 function MenuBarNode({ node, sectionId }: ContainerRenderProps) {
   const { backgroundColor = '#09090b', padding = '16px 32px', minHeight } = node.props
   return (
@@ -274,6 +342,7 @@ const renderers: Record<string, React.FC<ContainerRenderProps>> = {
   text: TextNode,
   image: ImageNode,
   button: ButtonNode,
+  form: FormNode,
   'menu-bar': MenuBarNode,
   footer: FooterNode,
 }

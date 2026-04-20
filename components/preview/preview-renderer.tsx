@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import type { Node } from '@/lib/types'
 import {
   buildGridStyles,
@@ -179,6 +180,119 @@ function ButtonNode({ node }: PreviewNodeProps) {
   )
 }
 
+function FormNode({ node }: PreviewNodeProps) {
+  const {
+    placeholder = 'your@email.com',
+    buttonLabel = 'Subscribe',
+    backgroundColor = '#ffffff',
+    borderColor = '#e4e4e7',
+    borderRadius = '8px',
+    inputColor = '#09090b',
+    buttonBackgroundColor = '#3b82f6',
+    buttonColor = '#ffffff',
+    fontSize = '14px',
+    paddingX = '14px',
+    paddingY = '10px',
+    gap = '8px',
+    successMessage = 'Thanks! Check your inbox.',
+    action,
+  } = node.props
+
+  const [email, setEmail] = useState('')
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (!email || status === 'submitting') return
+    setStatus('submitting')
+    try {
+      if (typeof action === 'string' && action.length > 0) {
+        const res = await fetch(action, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        })
+        if (!res.ok) throw new Error('Submit failed')
+      }
+      setStatus('success')
+      setEmail('')
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  if (status === 'success') {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+          height: '100%',
+          color: inputColor,
+          fontSize,
+          fontFamily: 'system-ui, sans-serif',
+        }}
+      >
+        {successMessage}
+      </div>
+    )
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      style={{
+        display: 'flex',
+        gap,
+        alignItems: 'stretch',
+        width: '100%',
+        height: '100%',
+      }}
+    >
+      <input
+        type="email"
+        required
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder={placeholder}
+        disabled={status === 'submitting'}
+        style={{
+          flex: 1,
+          minWidth: 0,
+          backgroundColor,
+          color: inputColor,
+          border: `1px solid ${borderColor}`,
+          borderRadius,
+          padding: `${paddingY} ${paddingX}`,
+          fontSize,
+          fontFamily: 'system-ui, sans-serif',
+          outline: 'none',
+        }}
+      />
+      <button
+        type="submit"
+        disabled={status === 'submitting'}
+        style={{
+          backgroundColor: buttonBackgroundColor,
+          color: buttonColor,
+          borderRadius,
+          padding: `${paddingY} ${paddingX}`,
+          fontSize,
+          fontWeight: 600,
+          border: 'none',
+          cursor: status === 'submitting' ? 'wait' : 'pointer',
+          fontFamily: 'system-ui, sans-serif',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {status === 'submitting' ? '...' : buttonLabel}
+      </button>
+    </form>
+  )
+}
+
 function MenuBarNode({ node }: PreviewNodeProps) {
   const { backgroundColor = '#09090b', padding = '16px 32px', minHeight } = node.props
   return (
@@ -205,6 +319,7 @@ const renderers: Record<string, React.FC<PreviewNodeProps>> = {
   text: TextNode,
   image: ImageNode,
   button: ButtonNode,
+  form: FormNode,
   'menu-bar': MenuBarNode,
   footer: FooterNode,
 }

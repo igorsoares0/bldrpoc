@@ -1,4 +1,4 @@
-export type NodeType = 'section' | 'text' | 'image' | 'button' | 'menu-bar' | 'footer'
+export type NodeType = 'section' | 'text' | 'image' | 'button' | 'form' | 'menu-bar' | 'footer'
 
 export type Viewport = 'desktop' | 'mobile'
 

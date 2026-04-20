@@ -6,7 +6,7 @@ export const DEFAULT_ROW_HEIGHT = 24
 export const MOBILE_BREAKPOINT_PX = 768
 export const REFERENCE_DESKTOP_WIDTH = 1280
 
-export const LEAF_TYPES: NodeType[] = ['text', 'image', 'button']
+export const LEAF_TYPES: NodeType[] = ['text', 'image', 'button', 'form']
 export const GRID_CONTAINER_TYPES: NodeType[] = ['section', 'menu-bar', 'footer']
 
 export function isLeafType(type: NodeType): boolean {
@@ -161,7 +161,7 @@ function leafFitCss(leaf: Node): string {
     const justify = ta === 'right' ? 'end' : ta === 'center' ? 'center' : 'start'
     return `justify-self:${justify};align-self:center;min-width:0;`
   }
-  if (leaf.type === 'button' || leaf.type === 'image') {
+  if (leaf.type === 'button' || leaf.type === 'image' || leaf.type === 'form') {
     return 'justify-self:stretch;align-self:stretch;min-width:0;'
   }
   return 'justify-self:center;align-self:center;min-width:0;'

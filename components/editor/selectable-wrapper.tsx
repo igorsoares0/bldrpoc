@@ -22,6 +22,7 @@ const typeLabels: Record<NodeType, string> = {
   text: 'Text',
   image: 'Image',
   button: 'Button',
+  form: 'Form',
   'menu-bar': 'Menu Bar',
   footer: 'Footer',
 }
@@ -74,7 +75,7 @@ function leafFitStyle(node: Node): CSSProperties {
       ta === 'right' ? 'end' : ta === 'center' ? 'center' : 'start'
     return { justifySelf, alignSelf: 'center', minWidth: 0 }
   }
-  if (node.type === 'button' || node.type === 'image') {
+  if (node.type === 'button' || node.type === 'image' || node.type === 'form') {
     return { justifySelf: 'stretch', alignSelf: 'stretch', minWidth: 0 }
   }
   return { justifySelf: 'center', alignSelf: 'center', minWidth: 0 }
@@ -135,7 +136,7 @@ export function SelectableWrapper({
   const isSectionRoot = Boolean(sectionId) && nodeId === sectionId
   const showResizeHandles =
     isSelected &&
-    (nodeType === 'button' || nodeType === 'image') &&
+    (nodeType === 'button' || nodeType === 'image' || nodeType === 'form') &&
     Boolean(parentGridLayout) &&
     Boolean(sectionId)
 

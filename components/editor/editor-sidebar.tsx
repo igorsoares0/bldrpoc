@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { TextProps } from './property-panels/text-props'
 import { ImageProps } from './property-panels/image-props'
 import { ButtonProps } from './property-panels/button-props'
+import { FormProps } from './property-panels/form-props'
 import { SectionProps } from './property-panels/section-props'
 import { MenuBarProps } from './property-panels/menu-bar-props'
 import { FooterProps } from './property-panels/footer-props'
@@ -17,6 +18,7 @@ const typeLabels: Record<NodeType, string> = {
   text: 'Text',
   image: 'Image',
   button: 'Button',
+  form: 'Form',
   'menu-bar': 'Menu Bar',
   footer: 'Footer',
 }
@@ -26,6 +28,7 @@ const propPanels: Record<NodeType, React.FC<{ node: Node }>> = {
   text: TextProps,
   image: ImageProps,
   button: ButtonProps,
+  form: FormProps,
   'menu-bar': MenuBarProps,
   footer: FooterProps,
 }

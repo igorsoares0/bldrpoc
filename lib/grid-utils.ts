@@ -17,6 +17,14 @@ export function isGridContainerType(type: NodeType): boolean {
   return GRID_CONTAINER_TYPES.includes(type)
 }
 
+export function isPlaceable(type: NodeType): boolean {
+  return isLeafType(type) || isGridContainerType(type)
+}
+
+export function collectPlaceables(section: Node): Node[] {
+  return (section.children ?? []).filter((c) => isPlaceable(c.type))
+}
+
 export function colsForViewport(viewport: Viewport): number {
   return viewport === 'desktop' ? GRID_COLS_DESKTOP : GRID_COLS_MOBILE
 }
@@ -142,27 +150,19 @@ export function placementToStyle(placement: GridPlacement) {
   }
 }
 
-export function collectLeaves(node: Node): Node[] {
-  const out: Node[] = []
-  const walk = (n: Node, isRoot: boolean) => {
-    if (!isRoot && isLeafType(n.type)) {
-      out.push(n)
-      return
-    }
-    n.children?.forEach((c) => walk(c, false))
-  }
-  walk(node, true)
-  return out
-}
-
-function leafFitCss(leaf: Node): string {
-  if (leaf.type === 'text') {
-    const ta = leaf.props.textAlign as string | undefined
+function placeableFitCss(node: Node): string {
+  if (node.type === 'text') {
+    const ta = node.props.textAlign as string | undefined
     const justify = ta === 'right' ? 'end' : ta === 'center' ? 'center' : 'start'
     return `justify-self:${justify};align-self:center;min-width:0;`
   }
-  if (leaf.type === 'button' || leaf.type === 'image' || leaf.type === 'form') {
-    return 'justify-self:stretch;align-self:stretch;min-width:0;'
+  if (
+    node.type === 'button' ||
+    node.type === 'image' ||
+    node.type === 'form' ||
+    isGridContainerType(node.type)
+  ) {
+    return 'justify-self:stretch;align-self:stretch;min-width:0;min-height:0;'
   }
   return 'justify-self:center;align-self:center;min-width:0;'
 }
@@ -172,19 +172,19 @@ export function buildGridStyles(section: Node): string {
   const rowHeight = section.props.rowHeight ?? DEFAULT_ROW_HEIGHT
   const cls = `grid-${cssId(sectionId)}`
 
-  const leaves = (section.children ?? []).filter((c) => isLeafType(c.type))
+  const placeables = collectPlaceables(section)
 
-  const desktopRules = leaves
-    .map((leaf, i) => {
-      const p = getActivePlacement(leaf, 'desktop', i)
-      return `.${cls} > [data-id="${cssId(leaf.id)}"]{grid-column:${p.col}/span ${p.colSpan};grid-row:${p.row}/span ${p.rowSpan};${leafFitCss(leaf)}}`
+  const desktopRules = placeables
+    .map((child, i) => {
+      const p = getActivePlacement(child, 'desktop', i)
+      return `.${cls} > [data-id="${cssId(child.id)}"]{grid-column:${p.col}/span ${p.colSpan};grid-row:${p.row}/span ${p.rowSpan};${placeableFitCss(child)}}`
     })
     .join('')
 
-  const mobileRules = leaves
-    .map((leaf, i) => {
-      const p = getActivePlacement(leaf, 'mobile', i)
-      return `.${cls} > [data-id="${cssId(leaf.id)}"]{grid-column:${p.col}/span ${p.colSpan};grid-row:${p.row}/span ${p.rowSpan};}`
+  const mobileRules = placeables
+    .map((child, i) => {
+      const p = getActivePlacement(child, 'mobile', i)
+      return `.${cls} > [data-id="${cssId(child.id)}"]{grid-column:${p.col}/span ${p.colSpan};grid-row:${p.row}/span ${p.rowSpan};}`
     })
     .join('')
 
@@ -245,59 +245,60 @@ function stripLegacyContainerProps(
 export function migrateTreeToGrid(tree: Node): { tree: Node; changed: boolean } {
   let changed = false
 
-  function flattenContainer(node: Node): Node {
-    const leaves = collectLeaves(node)
-    const newChildren = leaves.map((leaf, i) => {
-      let next = leaf
-      const legacy = legacyXyToPlacement(next)
-      const hasGrid = (next.props.grid as GridProps | undefined)?.desktop
-      const hasLegacyProps =
-        next.props.x !== undefined ||
-        next.props.y !== undefined ||
-        next.props.w !== undefined
-      if (legacy) {
-        changed = true
-        next = {
-          ...next,
-          props: {
-            ...stripLegacyLeafProps(next.props),
-            grid: {
-              desktop: legacy,
-            },
-          },
-        }
-      } else if (hasLegacyProps) {
-        changed = true
-        next = { ...next, props: stripLegacyLeafProps(next.props) }
+  function ensurePlacement(node: Node, index: number): Node {
+    let next = node
+    const legacy = legacyXyToPlacement(next)
+    const hasGrid = (next.props.grid as GridProps | undefined)?.desktop
+    const hasLegacyProps =
+      next.props.x !== undefined ||
+      next.props.y !== undefined ||
+      next.props.w !== undefined
+    if (legacy) {
+      changed = true
+      next = {
+        ...next,
+        props: {
+          ...stripLegacyLeafProps(next.props),
+          grid: { desktop: legacy },
+        },
       }
-      if (!hasGrid && !legacy) {
-        changed = true
-        next = {
-          ...next,
-          props: {
-            ...next.props,
-            grid: {
-              desktop: defaultDesktopPlacement(i),
-              mobile: defaultMobilePlacement(i),
-            },
+    } else if (hasLegacyProps) {
+      changed = true
+      next = { ...next, props: stripLegacyLeafProps(next.props) }
+    }
+    if (!hasGrid && !legacy) {
+      changed = true
+      next = {
+        ...next,
+        props: {
+          ...next.props,
+          grid: {
+            desktop: defaultDesktopPlacement(index),
+            mobile: defaultMobilePlacement(index),
           },
-        }
+        },
       }
+    }
+    return next
+  }
+
+  function walkContainer(container: Node): Node {
+    const newChildren = (container.children ?? []).map((child, i) => {
+      let next = child
+      if (isPlaceable(next.type)) next = ensurePlacement(next, i)
+      if (isGridContainerType(next.type)) next = walkContainer(next)
       return next
     })
-
-    const sameOrder =
-      newChildren.length === (node.children?.length ?? 0) &&
-      newChildren.every((c, i) => c === node.children?.[i])
-    if (!sameOrder) changed = true
-
-    if (node.props.freeLayout || node.props.gridLayout !== undefined) {
+    const sameChildren =
+      newChildren.length === (container.children?.length ?? 0) &&
+      newChildren.every((c, i) => c === container.children?.[i])
+    if (!sameChildren) changed = true
+    if (container.props.freeLayout || container.props.gridLayout !== undefined) {
       changed = true
     }
-
     return {
-      ...node,
-      props: stripLegacyContainerProps(node.props),
+      ...container,
+      props: stripLegacyContainerProps(container.props),
       children: newChildren,
     }
   }
@@ -321,7 +322,7 @@ export function migrateTreeToGrid(tree: Node): { tree: Node; changed: boolean } 
     }
 
     if (isGridContainerType(node.type)) {
-      return flattenContainer(node)
+      return walkContainer(node)
     }
 
     return node

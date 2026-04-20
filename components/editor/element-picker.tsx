@@ -605,350 +605,203 @@ const elements: ElementDef[] = [
     label: 'Pricing',
     icon: Tag,
     category: 'section',
-    createNode: () => ({
-      id: uid(),
-      type: 'section',
-      props: {
-        padding: '80px 32px',
-        backgroundColor: '#ffffff',
-        rowHeight: 24,
-        minHeight: '760px',
-      },
-      children: [
-        {
-          id: uid(),
-          type: 'text',
-          props: {
-            content: 'Simple, transparent pricing',
-            variant: 'h2',
-            color: '#09090b',
-            fontSize: '36px',
-            fontWeight: '700',
-            textAlign: 'center',
-            ...grid(
-              { col: 4, row: 2, colSpan: 18, rowSpan: 3 },
-              { col: 1, row: 1, colSpan: 8, rowSpan: 4 },
-            ),
-          },
+    createNode: () => {
+      const pricingCard = (
+        planName: string,
+        price: string,
+        features: [string, string, string],
+        ctaLabel: string,
+        highlighted: boolean,
+        cardDesktop: GridPlacement,
+        cardMobile: GridPlacement,
+      ): Node => ({
+        id: uid(),
+        type: 'section',
+        props: {
+          padding: '28px 20px',
+          backgroundColor: '#ffffff',
+          rowHeight: 24,
+          borderRadius: '12px',
+          border: highlighted ? '2px solid #3b82f6' : '1px solid #e4e4e7',
+          boxShadow: highlighted
+            ? '0 10px 30px -8px rgba(59,130,246,0.35)'
+            : '0 1px 2px rgba(0,0,0,0.04)',
+          ...grid(cardDesktop, cardMobile),
         },
-        {
-          id: uid(),
-          type: 'text',
-          props: {
-            content: 'Choose the plan that fits your team. Cancel anytime.',
-            variant: 'p',
-            color: '#71717a',
-            fontSize: '16px',
-            fontWeight: '400',
-            textAlign: 'center',
-            ...grid(
-              { col: 6, row: 6, colSpan: 14, rowSpan: 2 },
-              { col: 1, row: 6, colSpan: 8, rowSpan: 3 },
-            ),
+        children: [
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: planName,
+              variant: 'h3',
+              color: highlighted ? '#3b82f6' : '#09090b',
+              fontSize: '18px',
+              fontWeight: highlighted ? '700' : '600',
+              textAlign: 'center',
+              ...grid(
+                { col: 1, row: 2, colSpan: 24, rowSpan: 2 },
+                { col: 1, row: 2, colSpan: 8, rowSpan: 2 },
+              ),
+            },
           },
-        },
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: price,
+              variant: 'h2',
+              color: '#09090b',
+              fontSize: '40px',
+              fontWeight: '700',
+              textAlign: 'center',
+              ...grid(
+                { col: 1, row: 4, colSpan: 24, rowSpan: 3 },
+                { col: 1, row: 4, colSpan: 8, rowSpan: 3 },
+              ),
+            },
+          },
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: features[0],
+              variant: 'p',
+              color: '#52525b',
+              fontSize: '14px',
+              fontWeight: '400',
+              textAlign: 'center',
+              ...grid(
+                { col: 3, row: 8, colSpan: 20, rowSpan: 2 },
+                { col: 1, row: 8, colSpan: 8, rowSpan: 2 },
+              ),
+            },
+          },
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: features[1],
+              variant: 'p',
+              color: '#52525b',
+              fontSize: '14px',
+              fontWeight: '400',
+              textAlign: 'center',
+              ...grid(
+                { col: 3, row: 10, colSpan: 20, rowSpan: 2 },
+                { col: 1, row: 10, colSpan: 8, rowSpan: 2 },
+              ),
+            },
+          },
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: features[2],
+              variant: 'p',
+              color: '#52525b',
+              fontSize: '14px',
+              fontWeight: '400',
+              textAlign: 'center',
+              ...grid(
+                { col: 3, row: 12, colSpan: 20, rowSpan: 2 },
+                { col: 1, row: 12, colSpan: 8, rowSpan: 2 },
+              ),
+            },
+          },
+          {
+            id: uid(),
+            type: 'button',
+            props: {
+              label: ctaLabel,
+              backgroundColor: highlighted ? '#3b82f6' : '#ffffff',
+              color: highlighted ? '#ffffff' : '#09090b',
+              borderRadius: '8px',
+              paddingX: '20px',
+              paddingY: '10px',
+              fontSize: '14px',
+              fontWeight: '600',
+              ...grid(
+                { col: 6, row: 15, colSpan: 14, rowSpan: 2 },
+                { col: 2, row: 15, colSpan: 6, rowSpan: 2 },
+              ),
+            },
+          },
+        ],
+      })
 
-        // --- Card 1: Basic ---
-        {
-          id: uid(),
-          type: 'text',
-          props: {
-            content: 'Basic',
-            variant: 'h3',
-            color: '#09090b',
-            fontSize: '18px',
-            fontWeight: '600',
-            textAlign: 'center',
-            ...grid(
-              { col: 2, row: 11, colSpan: 7, rowSpan: 2 },
-              { col: 1, row: 10, colSpan: 8, rowSpan: 2 },
-            ),
-          },
+      return {
+        id: uid(),
+        type: 'section',
+        props: {
+          padding: '80px 32px',
+          backgroundColor: '#fafafa',
+          rowHeight: 24,
+          minHeight: '760px',
         },
-        {
-          id: uid(),
-          type: 'text',
-          props: {
-            content: '$9/mo',
-            variant: 'h2',
-            color: '#09090b',
-            fontSize: '40px',
-            fontWeight: '700',
-            textAlign: 'center',
-            ...grid(
-              { col: 2, row: 13, colSpan: 7, rowSpan: 3 },
-              { col: 1, row: 12, colSpan: 8, rowSpan: 3 },
-            ),
+        children: [
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: 'Simple, transparent pricing',
+              variant: 'h2',
+              color: '#09090b',
+              fontSize: '36px',
+              fontWeight: '700',
+              textAlign: 'center',
+              ...grid(
+                { col: 4, row: 2, colSpan: 18, rowSpan: 3 },
+                { col: 1, row: 1, colSpan: 8, rowSpan: 4 },
+              ),
+            },
           },
-        },
-        {
-          id: uid(),
-          type: 'text',
-          props: {
-            content: 'Up to 3 projects',
-            variant: 'p',
-            color: '#52525b',
-            fontSize: '14px',
-            fontWeight: '400',
-            textAlign: 'center',
-            ...grid(
-              { col: 2, row: 17, colSpan: 7, rowSpan: 2 },
-              { col: 1, row: 15, colSpan: 8, rowSpan: 2 },
-            ),
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: 'Choose the plan that fits your team. Cancel anytime.',
+              variant: 'p',
+              color: '#71717a',
+              fontSize: '16px',
+              fontWeight: '400',
+              textAlign: 'center',
+              ...grid(
+                { col: 6, row: 6, colSpan: 14, rowSpan: 2 },
+                { col: 1, row: 6, colSpan: 8, rowSpan: 3 },
+              ),
+            },
           },
-        },
-        {
-          id: uid(),
-          type: 'text',
-          props: {
-            content: 'Community support',
-            variant: 'p',
-            color: '#52525b',
-            fontSize: '14px',
-            fontWeight: '400',
-            textAlign: 'center',
-            ...grid(
-              { col: 2, row: 19, colSpan: 7, rowSpan: 2 },
-              { col: 1, row: 17, colSpan: 8, rowSpan: 2 },
-            ),
-          },
-        },
-        {
-          id: uid(),
-          type: 'text',
-          props: {
-            content: 'Basic analytics',
-            variant: 'p',
-            color: '#52525b',
-            fontSize: '14px',
-            fontWeight: '400',
-            textAlign: 'center',
-            ...grid(
-              { col: 2, row: 21, colSpan: 7, rowSpan: 2 },
-              { col: 1, row: 19, colSpan: 8, rowSpan: 2 },
-            ),
-          },
-        },
-        {
-          id: uid(),
-          type: 'button',
-          props: {
-            label: 'Get started',
-            backgroundColor: '#ffffff',
-            color: '#09090b',
-            borderRadius: '8px',
-            paddingX: '20px',
-            paddingY: '10px',
-            fontSize: '14px',
-            fontWeight: '600',
-            ...grid(
-              { col: 3, row: 24, colSpan: 5, rowSpan: 3 },
-              { col: 2, row: 21, colSpan: 6, rowSpan: 3 },
-            ),
-          },
-        },
-
-        // --- Card 2: Pro (highlighted) ---
-        {
-          id: uid(),
-          type: 'text',
-          props: {
-            content: 'Pro',
-            variant: 'h3',
-            color: '#3b82f6',
-            fontSize: '18px',
-            fontWeight: '700',
-            textAlign: 'center',
-            ...grid(
-              { col: 10, row: 11, colSpan: 7, rowSpan: 2 },
-              { col: 1, row: 25, colSpan: 8, rowSpan: 2 },
-            ),
-          },
-        },
-        {
-          id: uid(),
-          type: 'text',
-          props: {
-            content: '$29/mo',
-            variant: 'h2',
-            color: '#09090b',
-            fontSize: '40px',
-            fontWeight: '700',
-            textAlign: 'center',
-            ...grid(
-              { col: 10, row: 13, colSpan: 7, rowSpan: 3 },
-              { col: 1, row: 27, colSpan: 8, rowSpan: 3 },
-            ),
-          },
-        },
-        {
-          id: uid(),
-          type: 'text',
-          props: {
-            content: 'Unlimited projects',
-            variant: 'p',
-            color: '#52525b',
-            fontSize: '14px',
-            fontWeight: '400',
-            textAlign: 'center',
-            ...grid(
-              { col: 10, row: 17, colSpan: 7, rowSpan: 2 },
-              { col: 1, row: 30, colSpan: 8, rowSpan: 2 },
-            ),
-          },
-        },
-        {
-          id: uid(),
-          type: 'text',
-          props: {
-            content: 'Priority support',
-            variant: 'p',
-            color: '#52525b',
-            fontSize: '14px',
-            fontWeight: '400',
-            textAlign: 'center',
-            ...grid(
-              { col: 10, row: 19, colSpan: 7, rowSpan: 2 },
-              { col: 1, row: 32, colSpan: 8, rowSpan: 2 },
-            ),
-          },
-        },
-        {
-          id: uid(),
-          type: 'text',
-          props: {
-            content: 'Advanced analytics',
-            variant: 'p',
-            color: '#52525b',
-            fontSize: '14px',
-            fontWeight: '400',
-            textAlign: 'center',
-            ...grid(
-              { col: 10, row: 21, colSpan: 7, rowSpan: 2 },
-              { col: 1, row: 34, colSpan: 8, rowSpan: 2 },
-            ),
-          },
-        },
-        {
-          id: uid(),
-          type: 'button',
-          props: {
-            label: 'Start free trial',
-            backgroundColor: '#3b82f6',
-            color: '#ffffff',
-            borderRadius: '8px',
-            paddingX: '20px',
-            paddingY: '10px',
-            fontSize: '14px',
-            fontWeight: '600',
-            ...grid(
-              { col: 11, row: 24, colSpan: 5, rowSpan: 3 },
-              { col: 2, row: 36, colSpan: 6, rowSpan: 3 },
-            ),
-          },
-        },
-
-        // --- Card 3: Business ---
-        {
-          id: uid(),
-          type: 'text',
-          props: {
-            content: 'Business',
-            variant: 'h3',
-            color: '#09090b',
-            fontSize: '18px',
-            fontWeight: '600',
-            textAlign: 'center',
-            ...grid(
-              { col: 18, row: 11, colSpan: 7, rowSpan: 2 },
-              { col: 1, row: 40, colSpan: 8, rowSpan: 2 },
-            ),
-          },
-        },
-        {
-          id: uid(),
-          type: 'text',
-          props: {
-            content: '$99/mo',
-            variant: 'h2',
-            color: '#09090b',
-            fontSize: '40px',
-            fontWeight: '700',
-            textAlign: 'center',
-            ...grid(
-              { col: 18, row: 13, colSpan: 7, rowSpan: 3 },
-              { col: 1, row: 42, colSpan: 8, rowSpan: 3 },
-            ),
-          },
-        },
-        {
-          id: uid(),
-          type: 'text',
-          props: {
-            content: 'Everything in Pro',
-            variant: 'p',
-            color: '#52525b',
-            fontSize: '14px',
-            fontWeight: '400',
-            textAlign: 'center',
-            ...grid(
-              { col: 18, row: 17, colSpan: 7, rowSpan: 2 },
-              { col: 1, row: 45, colSpan: 8, rowSpan: 2 },
-            ),
-          },
-        },
-        {
-          id: uid(),
-          type: 'text',
-          props: {
-            content: 'Dedicated manager',
-            variant: 'p',
-            color: '#52525b',
-            fontSize: '14px',
-            fontWeight: '400',
-            textAlign: 'center',
-            ...grid(
-              { col: 18, row: 19, colSpan: 7, rowSpan: 2 },
-              { col: 1, row: 47, colSpan: 8, rowSpan: 2 },
-            ),
-          },
-        },
-        {
-          id: uid(),
-          type: 'text',
-          props: {
-            content: 'SLA & SSO',
-            variant: 'p',
-            color: '#52525b',
-            fontSize: '14px',
-            fontWeight: '400',
-            textAlign: 'center',
-            ...grid(
-              { col: 18, row: 21, colSpan: 7, rowSpan: 2 },
-              { col: 1, row: 49, colSpan: 8, rowSpan: 2 },
-            ),
-          },
-        },
-        {
-          id: uid(),
-          type: 'button',
-          props: {
-            label: 'Contact sales',
-            backgroundColor: '#ffffff',
-            color: '#09090b',
-            borderRadius: '8px',
-            paddingX: '20px',
-            paddingY: '10px',
-            fontSize: '14px',
-            fontWeight: '600',
-            ...grid(
-              { col: 19, row: 24, colSpan: 5, rowSpan: 3 },
-              { col: 2, row: 51, colSpan: 6, rowSpan: 3 },
-            ),
-          },
-        },
-      ],
-    }),
+          pricingCard(
+            'Basic',
+            '$9/mo',
+            ['Up to 3 projects', 'Community support', 'Basic analytics'],
+            'Get started',
+            false,
+            { col: 2, row: 10, colSpan: 7, rowSpan: 18 },
+            { col: 1, row: 10, colSpan: 8, rowSpan: 18 },
+          ),
+          pricingCard(
+            'Pro',
+            '$29/mo',
+            ['Unlimited projects', 'Priority support', 'Advanced analytics'],
+            'Start free trial',
+            true,
+            { col: 10, row: 10, colSpan: 7, rowSpan: 18 },
+            { col: 1, row: 30, colSpan: 8, rowSpan: 18 },
+          ),
+          pricingCard(
+            'Business',
+            '$99/mo',
+            ['Everything in Pro', 'Dedicated manager', 'SLA & SSO'],
+            'Contact sales',
+            false,
+            { col: 18, row: 10, colSpan: 7, rowSpan: 18 },
+            { col: 1, row: 50, colSpan: 8, rowSpan: 18 },
+          ),
+        ],
+      }
+    },
   },
   {
     type: 'footer',

@@ -5,7 +5,7 @@ import type { Node } from '@/lib/types'
 import {
   buildGridStyles,
   gridSectionClassName,
-  isLeafType,
+  isPlaceable,
 } from '@/lib/grid-utils'
 
 interface PreviewNodeProps {
@@ -22,10 +22,12 @@ function GridSectionWrapper({
   node,
   tag: Tag,
   baseStyle,
+  insideGrid,
 }: {
   node: Node
   tag: 'div' | 'nav' | 'footer'
   baseStyle: React.CSSProperties
+  insideGrid?: boolean
 }) {
   const css = buildGridStyles(node)
   return (
@@ -36,6 +38,8 @@ function GridSectionWrapper({
         style={{
           ...baseStyle,
           width: '100%',
+          height: insideGrid ? '100%' : undefined,
+          boxSizing: 'border-box',
         }}
       >
         {node.children?.map((child) => (
@@ -78,13 +82,21 @@ function RootSectionNode({ node }: PreviewNodeProps) {
   )
 }
 
-function SectionNode({ node }: PreviewNodeProps) {
-  const { padding = '24px', backgroundColor = '#ffffff', minHeight } = node.props
+function SectionNode({ node, insideGrid }: PreviewNodeProps) {
+  const {
+    padding = '24px',
+    backgroundColor = '#ffffff',
+    minHeight,
+    borderRadius,
+    boxShadow,
+    border,
+  } = node.props
   return (
     <GridSectionWrapper
       node={node}
       tag="div"
-      baseStyle={{ padding, backgroundColor, minHeight }}
+      baseStyle={{ padding, backgroundColor, minHeight, borderRadius, boxShadow, border }}
+      insideGrid={insideGrid}
     />
   )
 }
@@ -293,24 +305,26 @@ function FormNode({ node }: PreviewNodeProps) {
   )
 }
 
-function MenuBarNode({ node }: PreviewNodeProps) {
+function MenuBarNode({ node, insideGrid }: PreviewNodeProps) {
   const { backgroundColor = '#09090b', padding = '16px 32px', minHeight } = node.props
   return (
     <GridSectionWrapper
       node={node}
       tag="nav"
       baseStyle={{ backgroundColor, padding, minHeight }}
+      insideGrid={insideGrid}
     />
   )
 }
 
-function FooterNode({ node }: PreviewNodeProps) {
+function FooterNode({ node, insideGrid }: PreviewNodeProps) {
   const { backgroundColor = '#09090b', padding = '40px 24px', minHeight } = node.props
   return (
     <GridSectionWrapper
       node={node}
       tag="footer"
       baseStyle={{ backgroundColor, padding, minHeight }}
+      insideGrid={insideGrid}
     />
   )
 }
@@ -332,8 +346,8 @@ function PreviewNode({ node, insideGrid, isRoot }: PreviewNodeProps) {
         : SectionNode
       : renderers[node.type]
   if (!Renderer) return null
-  const element = <Renderer node={node} />
-  if (insideGrid && isLeafType(node.type)) {
+  const element = <Renderer node={node} insideGrid={insideGrid} />
+  if (insideGrid && isPlaceable(node.type)) {
     return <div data-id={cssId(node.id)}>{element}</div>
   }
   return element

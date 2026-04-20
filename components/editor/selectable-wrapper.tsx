@@ -11,7 +11,8 @@ import {
   defaultDesktopPlacement,
   defaultMobilePlacement,
   getActivePlacement,
-  isLeafType,
+  isGridContainerType,
+  isPlaceable,
   placementToStyle,
   type ResizeAnchor,
 } from '@/lib/grid-utils'
@@ -68,15 +69,25 @@ function readSectionMetrics(
   }
 }
 
-function leafFitStyle(node: Node): CSSProperties {
+function placeableFitStyle(node: Node): CSSProperties {
   if (node.type === 'text') {
     const ta = node.props.textAlign as string | undefined
     const justifySelf =
       ta === 'right' ? 'end' : ta === 'center' ? 'center' : 'start'
     return { justifySelf, alignSelf: 'center', minWidth: 0 }
   }
-  if (node.type === 'button' || node.type === 'image' || node.type === 'form') {
-    return { justifySelf: 'stretch', alignSelf: 'stretch', minWidth: 0 }
+  if (
+    node.type === 'button' ||
+    node.type === 'image' ||
+    node.type === 'form' ||
+    isGridContainerType(node.type)
+  ) {
+    return {
+      justifySelf: 'stretch',
+      alignSelf: 'stretch',
+      minWidth: 0,
+      minHeight: 0,
+    }
   }
   return { justifySelf: 'center', alignSelf: 'center', minWidth: 0 }
 }
@@ -97,6 +108,23 @@ function rectToPlacement(
     Math.round((childRect.top - metrics.contentTop) / metrics.rowHeight) + 1,
   )
   return clampPlacement({ col, row, colSpan, rowSpan }, cols)
+}
+
+function snapshotDirectChildren(
+  sectionEl: HTMLElement,
+  metrics: SectionMetrics,
+  cols: number,
+): Record<string, GridPlacement> {
+  const out: Record<string, GridPlacement> = {}
+  Array.from(sectionEl.children).forEach((el) => {
+    if (!(el instanceof HTMLElement)) return
+    const id = el.getAttribute('data-node-id')
+    const type = el.getAttribute('data-node-type') as NodeType | null
+    if (!id || !type || !isPlaceable(type)) return
+    const r = el.getBoundingClientRect()
+    out[id] = rectToPlacement(r, metrics, cols)
+  })
+  return out
 }
 
 export function SelectableWrapper({
@@ -125,18 +153,21 @@ export function SelectableWrapper({
   const { id: nodeId, type: nodeType } = node
   const isSelected = selectedId === nodeId
   const isEditing = editingId === nodeId
-  const isLeaf = isLeafType(nodeType)
+  const nodeIsPlaceable = isPlaceable(nodeType)
+  const isGridContainer = isGridContainerType(nodeType)
   const isResizing = resizePreview !== null
   const isDraggable =
-    isLeaf &&
+    nodeIsPlaceable &&
     Boolean(parentGridLayout) &&
     Boolean(sectionId) &&
     !isEditing &&
     !isResizing
-  const isSectionRoot = Boolean(sectionId) && nodeId === sectionId
   const showResizeHandles =
     isSelected &&
-    (nodeType === 'button' || nodeType === 'image' || nodeType === 'form') &&
+    (nodeType === 'button' ||
+      nodeType === 'image' ||
+      nodeType === 'form' ||
+      isGridContainer) &&
     Boolean(parentGridLayout) &&
     Boolean(sectionId)
 
@@ -144,10 +175,10 @@ export function SelectableWrapper({
   const effectivePlacement = resizePreview ?? activePlacement
 
   const placementStyle: CSSProperties =
-    parentGridLayout && isLeaf
+    parentGridLayout && nodeIsPlaceable
       ? {
           ...placementToStyle(effectivePlacement),
-          ...leafFitStyle(node),
+          ...placeableFitStyle(node),
         }
       : {}
 
@@ -225,7 +256,7 @@ export function SelectableWrapper({
   }
 
   const canAcceptDrop =
-    isSectionRoot &&
+    isGridContainer &&
     dragSession !== null &&
     dragSession.sectionId === nodeId
 
@@ -262,17 +293,7 @@ export function SelectableWrapper({
         const offsetRow = (e.clientY - metrics.contentTop) / metrics.rowHeight -
           (childRect.top - metrics.contentTop) / metrics.rowHeight
 
-        const snapshot: Record<string, GridPlacement> = {}
-        sectionEl
-          .querySelectorAll<HTMLElement>('[data-node-id]')
-          .forEach((el) => {
-            if (el === sectionEl) return
-            const id = el.getAttribute('data-node-id')
-            const type = el.getAttribute('data-node-type') as NodeType | null
-            if (!id || !type || !isLeafType(type)) return
-            const r = el.getBoundingClientRect()
-            snapshot[id] = rectToPlacement(r, metrics, cols)
-          })
+        const snapshot = snapshotDirectChildren(sectionEl, metrics, cols)
 
         const draggedPlacement = snapshot[nodeId] ?? {
           col: 1,

@@ -36,10 +36,10 @@ function renderChildren(node: Node, sectionId?: string, parentGridLayout?: boole
 
 function GridContainer({
   node,
-  sectionId,
   tag: Tag,
   baseStyle,
-}: ContainerRenderProps & {
+}: {
+  node: Node
   tag: 'div' | 'nav' | 'footer'
   baseStyle: React.CSSProperties
 }) {
@@ -59,9 +59,11 @@ function GridContainer({
         gridAutoRows: `${rowHeight}px`,
         position: 'relative',
         width: '100%',
+        height: '100%',
+        boxSizing: 'border-box',
       }}
     >
-      {renderChildren(node, sectionId, true)}
+      {renderChildren(node, node.id, true)}
       <GridOverlay sectionId={node.id} />
     </Tag>
   )
@@ -97,14 +99,20 @@ function RootSectionNode({ node, sectionId }: ContainerRenderProps) {
   )
 }
 
-function SectionNode({ node, sectionId }: ContainerRenderProps) {
-  const { padding = '24px', backgroundColor = '#ffffff', minHeight } = node.props
+function SectionNode({ node }: ContainerRenderProps) {
+  const {
+    padding = '24px',
+    backgroundColor = '#ffffff',
+    minHeight,
+    borderRadius,
+    boxShadow,
+    border,
+  } = node.props
   return (
     <GridContainer
       node={node}
-      sectionId={sectionId}
       tag="div"
-      baseStyle={{ padding, backgroundColor, minHeight }}
+      baseStyle={{ padding, backgroundColor, minHeight, borderRadius, boxShadow, border }}
     />
   )
 }
@@ -314,24 +322,22 @@ function FormNode({ node }: ContainerRenderProps) {
   )
 }
 
-function MenuBarNode({ node, sectionId }: ContainerRenderProps) {
+function MenuBarNode({ node }: ContainerRenderProps) {
   const { backgroundColor = '#09090b', padding = '16px 32px', minHeight } = node.props
   return (
     <GridContainer
       node={node}
-      sectionId={sectionId}
       tag="nav"
       baseStyle={{ backgroundColor, padding, minHeight }}
     />
   )
 }
 
-function FooterNode({ node, sectionId }: ContainerRenderProps) {
+function FooterNode({ node }: ContainerRenderProps) {
   const { backgroundColor = '#09090b', padding = '40px 24px', minHeight } = node.props
   return (
     <GridContainer
       node={node}
-      sectionId={sectionId}
       tag="footer"
       baseStyle={{ backgroundColor, padding, minHeight }}
     />

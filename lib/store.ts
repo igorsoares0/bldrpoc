@@ -8,7 +8,7 @@ import {
   addNodeToParent,
 } from './tree-utils'
 import {
-  collectLeaves,
+  collectPlaceables,
   defaultDesktopPlacement,
   defaultMobilePlacement,
   migrateTreeToGrid,
@@ -81,20 +81,20 @@ const emptyTree: Node = {
   children: [],
 }
 
-function applyPlacementsToLeaves(
+function applyPlacementsToChildren(
   section: Node,
   draggedId: string | null,
   draggedPlacement: GridPlacement | null,
   snapshot: Record<string, GridPlacement>,
   viewport: Viewport,
 ): Node {
-  const leaves = collectLeaves(section)
-  const newChildren = leaves.map((leaf, index) => {
-    const grid = (leaf.props.grid as { desktop?: GridPlacement; mobile?: GridPlacement } | undefined) ?? {}
+  const placeables = collectPlaceables(section)
+  const newChildren = placeables.map((child, index) => {
+    const grid = (child.props.grid as { desktop?: GridPlacement; mobile?: GridPlacement } | undefined) ?? {}
     let desktop = grid.desktop
     let mobile = grid.mobile
-    const snap = snapshot[leaf.id]
-    const isDragged = leaf.id === draggedId
+    const snap = snapshot[child.id]
+    const isDragged = child.id === draggedId
 
     if (viewport === 'desktop') {
       if (isDragged && draggedPlacement) desktop = draggedPlacement
@@ -109,9 +109,9 @@ function applyPlacementsToLeaves(
     }
 
     return {
-      ...leaf,
+      ...child,
       props: {
-        ...leaf.props,
+        ...child.props,
         grid: { desktop, mobile },
       },
     }
@@ -200,7 +200,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   placeNodeInGrid: (sectionId, draggedId, placement, snapshot, viewport) => {
     const { tree, past } = get()
     const newTree = updateNodeById(tree, sectionId, (section) => {
-      const flattened = applyPlacementsToLeaves(
+      const updated = applyPlacementsToChildren(
         section,
         draggedId,
         placement,
@@ -208,9 +208,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         viewport,
       )
       return {
-        ...flattened,
+        ...updated,
         props: {
-          ...flattened.props,
+          ...updated.props,
           rowHeight: section.props.rowHeight ?? DEFAULT_ROW_HEIGHT,
         },
       }

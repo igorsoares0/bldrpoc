@@ -168,6 +168,7 @@ function ButtonNode({ node }: PreviewNodeProps) {
     paddingY = '12px',
     fontSize = '16px',
     fontWeight = '600',
+    border = 'none',
   } = node.props
 
   return (
@@ -180,7 +181,7 @@ function ButtonNode({ node }: PreviewNodeProps) {
         padding: `${paddingY} ${paddingX}`,
         fontSize,
         fontWeight,
-        border: 'none',
+        border,
         cursor: 'pointer',
         fontFamily: 'system-ui, sans-serif',
         width: '100%',

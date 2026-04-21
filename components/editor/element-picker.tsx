@@ -606,6 +606,23 @@ const elements: ElementDef[] = [
     icon: Tag,
     category: 'section',
     createNode: () => {
+      const featureRow = (text: string, rowDesktop: number, rowMobile: number): Node => ({
+        id: uid(),
+        type: 'text',
+        props: {
+          content: `✓   ${text}`,
+          variant: 'p',
+          color: '#3f3f46',
+          fontSize: '14px',
+          fontWeight: '500',
+          textAlign: 'left',
+          ...grid(
+            { col: 3, row: rowDesktop, colSpan: 20, rowSpan: 2 },
+            { col: 1, row: rowMobile, colSpan: 8, rowSpan: 2 },
+          ),
+        },
+      })
+
       const pricingCard = (
         planName: string,
         price: string,
@@ -614,121 +631,101 @@ const elements: ElementDef[] = [
         highlighted: boolean,
         cardDesktop: GridPlacement,
         cardMobile: GridPlacement,
-      ): Node => ({
-        id: uid(),
-        type: 'section',
-        props: {
-          padding: '28px 20px',
-          backgroundColor: '#ffffff',
-          rowHeight: 24,
-          borderRadius: '12px',
-          border: highlighted ? '2px solid #3b82f6' : '1px solid #e4e4e7',
-          boxShadow: highlighted
-            ? '0 10px 30px -8px rgba(59,130,246,0.35)'
-            : '0 1px 2px rgba(0,0,0,0.04)',
-          ...grid(cardDesktop, cardMobile),
-        },
-        children: [
-          {
-            id: uid(),
-            type: 'text',
-            props: {
-              content: planName,
-              variant: 'h3',
-              color: highlighted ? '#3b82f6' : '#09090b',
-              fontSize: '18px',
-              fontWeight: highlighted ? '700' : '600',
-              textAlign: 'center',
-              ...grid(
-                { col: 1, row: 2, colSpan: 24, rowSpan: 2 },
-                { col: 1, row: 2, colSpan: 8, rowSpan: 2 },
-              ),
-            },
+      ): Node => {
+        const badge: Node[] = highlighted
+          ? [
+              {
+                id: uid(),
+                type: 'text',
+                props: {
+                  content: 'MOST POPULAR',
+                  variant: 'p',
+                  color: '#3b82f6',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  textAlign: 'center',
+                  ...grid(
+                    { col: 1, row: 1, colSpan: 24, rowSpan: 1 },
+                    { col: 1, row: 1, colSpan: 8, rowSpan: 1 },
+                  ),
+                },
+              },
+            ]
+          : []
+
+        return {
+          id: uid(),
+          type: 'section',
+          props: {
+            padding: '32px 24px',
+            backgroundColor: '#ffffff',
+            rowHeight: 24,
+            borderRadius: '14px',
+            border: highlighted ? '2px solid #3b82f6' : '1px solid #e4e4e7',
+            boxShadow: highlighted
+              ? '0 18px 40px -12px rgba(59,130,246,0.4)'
+              : '0 1px 2px rgba(0,0,0,0.04)',
+            ...grid(cardDesktop, cardMobile),
           },
-          {
-            id: uid(),
-            type: 'text',
-            props: {
-              content: price,
-              variant: 'h2',
-              color: '#09090b',
-              fontSize: '40px',
-              fontWeight: '700',
-              textAlign: 'center',
-              ...grid(
-                { col: 1, row: 4, colSpan: 24, rowSpan: 3 },
-                { col: 1, row: 4, colSpan: 8, rowSpan: 3 },
-              ),
+          children: [
+            ...badge,
+            {
+              id: uid(),
+              type: 'text',
+              props: {
+                content: planName,
+                variant: 'h3',
+                color: '#09090b',
+                fontSize: '20px',
+                fontWeight: '700',
+                textAlign: 'center',
+                ...grid(
+                  { col: 1, row: 2, colSpan: 24, rowSpan: 2 },
+                  { col: 1, row: 2, colSpan: 8, rowSpan: 2 },
+                ),
+              },
             },
-          },
-          {
-            id: uid(),
-            type: 'text',
-            props: {
-              content: features[0],
-              variant: 'p',
-              color: '#52525b',
-              fontSize: '14px',
-              fontWeight: '400',
-              textAlign: 'center',
-              ...grid(
-                { col: 3, row: 8, colSpan: 20, rowSpan: 2 },
-                { col: 1, row: 8, colSpan: 8, rowSpan: 2 },
-              ),
+            {
+              id: uid(),
+              type: 'text',
+              props: {
+                content: price,
+                variant: 'h2',
+                color: '#09090b',
+                fontSize: '44px',
+                fontWeight: '800',
+                textAlign: 'center',
+                ...grid(
+                  { col: 1, row: 4, colSpan: 24, rowSpan: 3 },
+                  { col: 1, row: 4, colSpan: 8, rowSpan: 3 },
+                ),
+              },
             },
-          },
-          {
-            id: uid(),
-            type: 'text',
-            props: {
-              content: features[1],
-              variant: 'p',
-              color: '#52525b',
-              fontSize: '14px',
-              fontWeight: '400',
-              textAlign: 'center',
-              ...grid(
-                { col: 3, row: 10, colSpan: 20, rowSpan: 2 },
-                { col: 1, row: 10, colSpan: 8, rowSpan: 2 },
-              ),
+            featureRow(features[0], 9, 9),
+            featureRow(features[1], 11, 11),
+            featureRow(features[2], 13, 13),
+            {
+              id: uid(),
+              type: 'button',
+              props: {
+                label: ctaLabel,
+                backgroundColor: highlighted ? '#3b82f6' : '#ffffff',
+                color: highlighted ? '#ffffff' : '#09090b',
+                border: highlighted ? 'none' : '1px solid #d4d4d8',
+                borderRadius: '8px',
+                paddingX: '20px',
+                paddingY: '11px',
+                fontSize: '14px',
+                fontWeight: '600',
+                ...grid(
+                  { col: 4, row: 16, colSpan: 18, rowSpan: 2 },
+                  { col: 2, row: 16, colSpan: 6, rowSpan: 2 },
+                ),
+              },
             },
-          },
-          {
-            id: uid(),
-            type: 'text',
-            props: {
-              content: features[2],
-              variant: 'p',
-              color: '#52525b',
-              fontSize: '14px',
-              fontWeight: '400',
-              textAlign: 'center',
-              ...grid(
-                { col: 3, row: 12, colSpan: 20, rowSpan: 2 },
-                { col: 1, row: 12, colSpan: 8, rowSpan: 2 },
-              ),
-            },
-          },
-          {
-            id: uid(),
-            type: 'button',
-            props: {
-              label: ctaLabel,
-              backgroundColor: highlighted ? '#3b82f6' : '#ffffff',
-              color: highlighted ? '#ffffff' : '#09090b',
-              borderRadius: '8px',
-              paddingX: '20px',
-              paddingY: '10px',
-              fontSize: '14px',
-              fontWeight: '600',
-              ...grid(
-                { col: 6, row: 15, colSpan: 14, rowSpan: 2 },
-                { col: 2, row: 15, colSpan: 6, rowSpan: 2 },
-              ),
-            },
-          },
-        ],
-      })
+          ],
+        }
+      }
 
       return {
         id: uid(),

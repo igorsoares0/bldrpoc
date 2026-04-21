@@ -65,6 +65,15 @@ export function ButtonProps({ node }: { node: Node }) {
         onChange={(e) => updateNode(node.id, { borderRadius: e.target.value })}
       />
 
+      <Input
+        label="Border"
+        placeholder="none or 1px solid #d4d4d8"
+        value={node.props.border || ''}
+        onChange={(e) =>
+          updateNode(node.id, { border: e.target.value || 'none' })
+        }
+      />
+
       <div className="grid grid-cols-2 gap-3">
         <Input
           label="Padding X"

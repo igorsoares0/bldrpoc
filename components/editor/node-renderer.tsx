@@ -230,6 +230,7 @@ function ButtonNode({ node }: ContainerRenderProps) {
     paddingY = '12px',
     fontSize = '16px',
     fontWeight = '600',
+    border = 'none',
   } = node.props
 
   return (
@@ -242,7 +243,7 @@ function ButtonNode({ node }: ContainerRenderProps) {
         padding: `${paddingY} ${paddingX}`,
         fontSize,
         fontWeight,
-        border: 'none',
+        border,
         cursor: 'pointer',
         fontFamily: 'inherit',
         width: '100%',

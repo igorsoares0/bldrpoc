@@ -14,6 +14,7 @@ import {
   isGridContainerType,
   isPlaceable,
   placementToStyle,
+  snapPlacementToSiblings,
   type ResizeAnchor,
 } from '@/lib/grid-utils'
 import type { GridPlacement, GridProps, Node, NodeType } from '@/lib/types'
@@ -44,6 +45,41 @@ type SectionMetrics = {
   contentHeight: number
   cellWidth: number
   rowHeight: number
+}
+
+function rectToPlacement(
+  childRect: DOMRect,
+  metrics: SectionMetrics,
+  cols: number,
+): GridPlacement {
+  const colSpan = Math.max(1, Math.round(childRect.width / metrics.cellWidth))
+  const rowSpan = Math.max(1, Math.round(childRect.height / metrics.rowHeight))
+  const col = Math.max(
+    1,
+    Math.round((childRect.left - metrics.contentLeft) / metrics.cellWidth) + 1,
+  )
+  const row = Math.max(
+    1,
+    Math.round((childRect.top - metrics.contentTop) / metrics.rowHeight) + 1,
+  )
+  return clampPlacement({ col, row, colSpan, rowSpan }, cols)
+}
+
+function snapshotDirectChildren(
+  sectionEl: HTMLElement,
+  metrics: SectionMetrics,
+  cols: number,
+): Record<string, GridPlacement> {
+  const out: Record<string, GridPlacement> = {}
+  Array.from(sectionEl.children).forEach((el) => {
+    if (!(el instanceof HTMLElement)) return
+    const id = el.getAttribute('data-node-id')
+    const type = el.getAttribute('data-node-type') as NodeType | null
+    if (!id || !type || !isPlaceable(type)) return
+    const r = el.getBoundingClientRect()
+    out[id] = rectToPlacement(r, metrics, cols)
+  })
+  return out
 }
 
 function readSectionMetrics(
@@ -92,41 +128,6 @@ function placeableFitStyle(node: Node): CSSProperties {
   return { justifySelf: 'center', alignSelf: 'center', minWidth: 0 }
 }
 
-function rectToPlacement(
-  childRect: DOMRect,
-  metrics: SectionMetrics,
-  cols: number,
-): GridPlacement {
-  const colSpan = Math.max(1, Math.round(childRect.width / metrics.cellWidth))
-  const rowSpan = Math.max(1, Math.round(childRect.height / metrics.rowHeight))
-  const col = Math.max(
-    1,
-    Math.round((childRect.left - metrics.contentLeft) / metrics.cellWidth) + 1,
-  )
-  const row = Math.max(
-    1,
-    Math.round((childRect.top - metrics.contentTop) / metrics.rowHeight) + 1,
-  )
-  return clampPlacement({ col, row, colSpan, rowSpan }, cols)
-}
-
-function snapshotDirectChildren(
-  sectionEl: HTMLElement,
-  metrics: SectionMetrics,
-  cols: number,
-): Record<string, GridPlacement> {
-  const out: Record<string, GridPlacement> = {}
-  Array.from(sectionEl.children).forEach((el) => {
-    if (!(el instanceof HTMLElement)) return
-    const id = el.getAttribute('data-node-id')
-    const type = el.getAttribute('data-node-type') as NodeType | null
-    if (!id || !type || !isPlaceable(type)) return
-    const r = el.getBoundingClientRect()
-    out[id] = rectToPlacement(r, metrics, cols)
-  })
-  return out
-}
-
 export function SelectableWrapper({
   node,
   sectionId,
@@ -142,6 +143,7 @@ export function SelectableWrapper({
   const beginDrag = useEditorStore((s) => s.beginDrag)
   const endDrag = useEditorStore((s) => s.endDrag)
   const setDragGhost = useEditorStore((s) => s.setDragGhost)
+  const setDragSnapGuides = useEditorStore((s) => s.setDragSnapGuides)
   const placeNodeInGrid = useEditorStore((s) => s.placeNodeInGrid)
   const updateNode = useEditorStore((s) => s.updateNode)
   const viewport = useEditorStore((s) => s.viewport)
@@ -337,22 +339,31 @@ export function SelectableWrapper({
         )
         const cursorCol = (e.clientX - metrics.contentLeft) / metrics.cellWidth
         const cursorRow = (e.clientY - metrics.contentTop) / metrics.rowHeight
-        const placement = clampPlacement(
-          {
-            col: Math.floor(cursorCol - dragSession.offsetCol) + 1,
-            row: Math.floor(cursorRow - dragSession.offsetRow) + 1,
-            colSpan: dragSession.colSpan,
-            rowSpan: dragSession.rowSpan,
-          },
-          dragSession.cols,
+        const raw: GridPlacement = {
+          col: Math.floor(cursorCol - dragSession.offsetCol) + 1,
+          row: Math.floor(cursorRow - dragSession.offsetRow) + 1,
+          colSpan: dragSession.colSpan,
+          rowSpan: dragSession.rowSpan,
+        }
+        const snapped = snapPlacementToSiblings(
+          raw,
+          dragSession.snapshot,
+          dragSession.id,
         )
+        const placement = clampPlacement(snapped.placement, dragSession.cols)
         setDragGhost(placement)
+        setDragSnapGuides(
+          snapped.guides.cols.length || snapped.guides.rows.length
+            ? snapped.guides
+            : null,
+        )
       }}
       onDragLeave={(e) => {
         if (!canAcceptDrop) return
         const next = e.relatedTarget as globalThis.Node | null
         if (next && e.currentTarget.contains(next)) return
         setDragGhost(null)
+        setDragSnapGuides(null)
       }}
       onDrop={(e) => {
         if (!canAcceptDrop || !dragSession) return
@@ -373,18 +384,18 @@ export function SelectableWrapper({
         )
         const cursorCol = (e.clientX - metrics.contentLeft) / metrics.cellWidth
         const cursorRow = (e.clientY - metrics.contentTop) / metrics.rowHeight
-        const rawCol = Math.floor(cursorCol - dragSession.offsetCol) + 1
-        const rawRow = Math.floor(cursorRow - dragSession.offsetRow) + 1
-
-        const placement = clampPlacement(
-          {
-            col: rawCol,
-            row: rawRow,
-            colSpan: dragSession.colSpan,
-            rowSpan: dragSession.rowSpan,
-          },
-          dragSession.cols,
+        const raw: GridPlacement = {
+          col: Math.floor(cursorCol - dragSession.offsetCol) + 1,
+          row: Math.floor(cursorRow - dragSession.offsetRow) + 1,
+          colSpan: dragSession.colSpan,
+          rowSpan: dragSession.rowSpan,
+        }
+        const snapped = snapPlacementToSiblings(
+          raw,
+          dragSession.snapshot,
+          dragSession.id,
         )
+        const placement = clampPlacement(snapped.placement, dragSession.cols)
 
         placeNodeInGrid(
           nodeId,

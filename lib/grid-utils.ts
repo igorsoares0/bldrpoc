@@ -150,6 +150,93 @@ export function placementToStyle(placement: GridPlacement) {
   }
 }
 
+export function snapshotPlacementsFromTree(
+  section: Node,
+  viewport: Viewport,
+): Record<string, GridPlacement> {
+  const out: Record<string, GridPlacement> = {}
+  collectPlaceables(section).forEach((child, i) => {
+    out[child.id] = getActivePlacement(child, viewport, i)
+  })
+  return out
+}
+
+export type SnapGuides = { cols: number[]; rows: number[] }
+export type SnapResult = { placement: GridPlacement; guides: SnapGuides }
+
+export function snapPlacementToSiblings(
+  raw: GridPlacement,
+  snapshot: Record<string, GridPlacement>,
+  draggedId: string,
+  threshold: { col: number; row: number } = { col: 1, row: 2 },
+): SnapResult {
+  const colEdges: number[] = []
+  const rowEdges: number[] = []
+  for (const [id, p] of Object.entries(snapshot)) {
+    if (id === draggedId) continue
+    colEdges.push(p.col, p.col + p.colSpan)
+    rowEdges.push(p.row, p.row + p.rowSpan)
+  }
+
+  const draggedColEdges = [raw.col, raw.col + raw.colSpan]
+  const draggedRowEdges = [raw.row, raw.row + raw.rowSpan]
+
+  let bestColDelta = 0
+  let bestColAbs = Infinity
+  for (const d of draggedColEdges) {
+    for (const s of colEdges) {
+      const delta = s - d
+      const abs = Math.abs(delta)
+      if (abs <= threshold.col && abs < bestColAbs) {
+        bestColAbs = abs
+        bestColDelta = delta
+      }
+    }
+  }
+
+  let bestRowDelta = 0
+  let bestRowAbs = Infinity
+  for (const d of draggedRowEdges) {
+    for (const s of rowEdges) {
+      const delta = s - d
+      const abs = Math.abs(delta)
+      if (abs <= threshold.row && abs < bestRowAbs) {
+        bestRowAbs = abs
+        bestRowDelta = delta
+      }
+    }
+  }
+
+  const placement: GridPlacement = {
+    col: raw.col + bestColDelta,
+    row: raw.row + bestRowDelta,
+    colSpan: raw.colSpan,
+    rowSpan: raw.rowSpan,
+  }
+
+  const guideCols = new Set<number>()
+  const guideRows = new Set<number>()
+  if (bestColAbs <= threshold.col) {
+    const left = placement.col
+    const right = placement.col + placement.colSpan
+    for (const s of colEdges) {
+      if (s === left || s === right) guideCols.add(s)
+    }
+  }
+  if (bestRowAbs <= threshold.row) {
+    const top = placement.row
+    const bottom = placement.row + placement.rowSpan
+    for (const s of rowEdges) {
+      if (s === top || s === bottom) guideRows.add(s)
+    }
+  }
+
+  return {
+    placement,
+    guides: { cols: Array.from(guideCols), rows: Array.from(guideRows) },
+  }
+}
+
 function placeableFitCss(node: Node): string {
   if (node.type === 'text') {
     const ta = node.props.textAlign as string | undefined

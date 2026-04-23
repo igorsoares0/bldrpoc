@@ -13,6 +13,7 @@ import {
   defaultMobilePlacement,
   migrateTreeToGrid,
   DEFAULT_ROW_HEIGHT,
+  type SnapGuides,
 } from './grid-utils'
 
 export type DragSession = {
@@ -41,6 +42,7 @@ type EditorState = {
   isSaving: boolean
   dragSession: DragSession | null
   dragGhost: GridPlacement | null
+  dragSnapGuides: SnapGuides | null
   past: Node[]
   future: Node[]
 
@@ -62,6 +64,7 @@ type EditorState = {
   redo: () => void
   beginDrag: (session: DragSession) => void
   setDragGhost: (ghost: GridPlacement | null) => void
+  setDragSnapGuides: (guides: SnapGuides | null) => void
   endDrag: () => void
   setViewport: (v: Viewport) => void
   saveToServer: () => Promise<void>
@@ -129,6 +132,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   isSaving: false,
   dragSession: null,
   dragGhost: null,
+  dragSnapGuides: null,
   past: [],
   future: [],
 
@@ -144,6 +148,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       isSaving: false,
       dragSession: null,
       dragGhost: null,
+      dragSnapGuides: null,
       past: [],
       future: [],
     })
@@ -249,9 +254,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })
   },
 
-  beginDrag: (session) => set({ dragSession: session, dragGhost: null }),
+  beginDrag: (session) =>
+    set({ dragSession: session, dragGhost: null, dragSnapGuides: null }),
   setDragGhost: (ghost) => set({ dragGhost: ghost }),
-  endDrag: () => set({ dragSession: null, dragGhost: null }),
+  setDragSnapGuides: (guides) => set({ dragSnapGuides: guides }),
+  endDrag: () =>
+    set({ dragSession: null, dragGhost: null, dragSnapGuides: null }),
 
   setViewport: (v) => set({ viewport: v }),
 

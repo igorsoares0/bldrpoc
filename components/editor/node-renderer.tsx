@@ -236,6 +236,9 @@ function ButtonNode({ node }: ContainerRenderProps) {
     fontSize = '16px',
     fontWeight = '600',
     border = 'none',
+    fontFamily,
+    fontStyle,
+    letterSpacing,
   } = node.props
 
   return (
@@ -248,9 +251,11 @@ function ButtonNode({ node }: ContainerRenderProps) {
         padding: `${paddingY} ${paddingX}`,
         fontSize,
         fontWeight,
+        fontStyle,
+        letterSpacing,
         border,
         cursor: 'pointer',
-        fontFamily: 'inherit',
+        fontFamily: fontFamily || 'inherit',
         width: '100%',
         height: '100%',
       }}
@@ -274,7 +279,16 @@ function FormNode({ node }: ContainerRenderProps) {
     paddingX = '14px',
     paddingY = '10px',
     gap = '8px',
+    fontFamily,
+    fontStyle,
+    letterSpacing,
   } = node.props
+
+  const typographyStyle = {
+    fontFamily: fontFamily || 'inherit',
+    fontStyle,
+    letterSpacing,
+  }
 
   return (
     <div
@@ -301,7 +315,7 @@ function FormNode({ node }: ContainerRenderProps) {
           borderRadius,
           padding: `${paddingY} ${paddingX}`,
           fontSize,
-          fontFamily: 'inherit',
+          ...typographyStyle,
           outline: 'none',
           pointerEvents: 'none',
         }}
@@ -315,7 +329,7 @@ function FormNode({ node }: ContainerRenderProps) {
           padding: `${paddingY} ${paddingX}`,
           fontSize,
           fontWeight: 600,
-          fontFamily: 'inherit',
+          ...typographyStyle,
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',

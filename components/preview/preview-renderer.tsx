@@ -174,6 +174,9 @@ function ButtonNode({ node }: PreviewNodeProps) {
     fontSize = '16px',
     fontWeight = '600',
     border = 'none',
+    fontFamily,
+    fontStyle,
+    letterSpacing,
   } = node.props
 
   return (
@@ -186,9 +189,11 @@ function ButtonNode({ node }: PreviewNodeProps) {
         padding: `${paddingY} ${paddingX}`,
         fontSize,
         fontWeight,
+        fontStyle,
+        letterSpacing,
         border,
         cursor: 'pointer',
-        fontFamily: 'system-ui, sans-serif',
+        fontFamily: fontFamily || 'system-ui, sans-serif',
         width: '100%',
         height: '100%',
       }}
@@ -214,7 +219,16 @@ function FormNode({ node }: PreviewNodeProps) {
     gap = '8px',
     successMessage = 'Thanks! Check your inbox.',
     action,
+    fontFamily,
+    fontStyle,
+    letterSpacing,
   } = node.props
+
+  const typographyStyle = {
+    fontFamily: fontFamily || 'system-ui, sans-serif',
+    fontStyle,
+    letterSpacing,
+  }
 
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
@@ -250,7 +264,7 @@ function FormNode({ node }: PreviewNodeProps) {
           height: '100%',
           color: inputColor,
           fontSize,
-          fontFamily: 'system-ui, sans-serif',
+          ...typographyStyle,
         }}
       >
         {successMessage}
@@ -285,7 +299,7 @@ function FormNode({ node }: PreviewNodeProps) {
           borderRadius,
           padding: `${paddingY} ${paddingX}`,
           fontSize,
-          fontFamily: 'system-ui, sans-serif',
+          ...typographyStyle,
           outline: 'none',
         }}
       />
@@ -301,7 +315,7 @@ function FormNode({ node }: PreviewNodeProps) {
           fontWeight: 600,
           border: 'none',
           cursor: status === 'submitting' ? 'wait' : 'pointer',
-          fontFamily: 'system-ui, sans-serif',
+          ...typographyStyle,
           whiteSpace: 'nowrap',
         }}
       >

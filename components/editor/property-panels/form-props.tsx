@@ -3,6 +3,7 @@
 import { useEditorStore } from '@/lib/store'
 import { Input } from '@/components/ui/input'
 import { GridPlacementEditor } from './grid-placement-editor'
+import { TypographyControls } from './typography-controls'
 import type { Node } from '@/lib/types'
 
 function ColorField({
@@ -128,6 +129,8 @@ export function FormProps({ node }: { node: Node }) {
         value={node.props.fontSize ?? '14px'}
         onChange={(e) => updateNode(node.id, { fontSize: e.target.value })}
       />
+
+      <TypographyControls node={node} />
     </div>
   )
 }

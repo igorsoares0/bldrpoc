@@ -205,6 +205,7 @@ export function createGradientLabsContent(): Node {
               fontSize: '14px',
               fontWeight: '500',
               border: 'none',
+              fontFamily: 'var(--font-inter), system-ui, sans-serif',
               ...grid(
                 { col: 21, row: 1, colSpan: 4, rowSpan: 2 },
                 { col: 1, row: 7, colSpan: 8, rowSpan: 2 },
@@ -293,6 +294,7 @@ export function createGradientLabsContent(): Node {
               fontSize: '16px',
               fontWeight: '500',
               border: 'none',
+              fontFamily: 'var(--font-inter), system-ui, sans-serif',
               ...grid(
                 { col: 11, row: 24, colSpan: 4, rowSpan: 3 },
                 { col: 2, row: 19, colSpan: 6, rowSpan: 3 },

@@ -3,7 +3,7 @@
 import { useEditorStore } from '@/lib/store'
 import { Input } from '@/components/ui/input'
 import { GridPlacementEditor } from './grid-placement-editor'
-import { FONT_FAMILIES, fontSupportsItalic } from '@/lib/fonts'
+import { TypographyControls } from './typography-controls'
 import type { Node } from '@/lib/types'
 
 const variants = [
@@ -102,84 +102,7 @@ export function TextProps({ node }: { node: Node }) {
         </select>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-text-secondary">
-          Font Family
-        </label>
-        <select
-          value={node.props.fontFamily ?? ''}
-          onChange={(e) => {
-            const next = e.target.value
-            const update: Record<string, unknown> = { fontFamily: next || undefined }
-            if (!fontSupportsItalic(next) && node.props.fontStyle === 'italic') {
-              update.fontStyle = 'normal'
-            }
-            updateNode(node.id, update)
-          }}
-          className="h-9 w-full rounded-lg border border-surface-3 bg-surface-2 px-3 text-sm text-text-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
-        >
-          {FONT_FAMILIES.map((f) => (
-            <option key={f.label} value={f.value}>
-              {f.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-text-secondary">
-          Font Style
-        </label>
-        <div className="flex gap-1">
-          {(['normal', 'italic'] as const).map((s) => {
-            const disabled = s === 'italic' && !fontSupportsItalic(node.props.fontFamily)
-            const active = (node.props.fontStyle || 'normal') === s
-            return (
-              <button
-                key={s}
-                disabled={disabled}
-                onClick={() =>
-                  updateNode(node.id, { fontStyle: s === 'normal' ? undefined : s })
-                }
-                className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                  disabled
-                    ? 'bg-surface-2 text-text-muted cursor-not-allowed opacity-50'
-                    : active
-                      ? 'bg-accent text-white cursor-pointer'
-                      : 'bg-surface-2 text-text-secondary hover:bg-surface-3 cursor-pointer'
-                }`}
-                style={s === 'italic' ? { fontStyle: 'italic' } : undefined}
-              >
-                {s === 'normal' ? 'Normal' : 'Italic'}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-text-secondary">
-          Letter Spacing
-        </label>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            step={0.01}
-            min={-0.2}
-            max={1}
-            value={parseFloat(String(node.props.letterSpacing ?? '0').replace('em', '')) || 0}
-            onChange={(e) => {
-              const n = parseFloat(e.target.value)
-              if (!Number.isFinite(n)) return
-              updateNode(node.id, {
-                letterSpacing: n === 0 ? undefined : `${n}em`,
-              })
-            }}
-            className="h-9 w-full rounded-lg border border-surface-3 bg-surface-2 px-3 text-sm text-text-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-          />
-          <span className="text-xs text-text-muted">em</span>
-        </div>
-      </div>
+      <TypographyControls node={node} />
 
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-text-secondary">

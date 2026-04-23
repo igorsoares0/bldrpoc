@@ -3,6 +3,7 @@
 import { useEditorStore } from '@/lib/store'
 import { Input } from '@/components/ui/input'
 import { GridPlacementEditor } from './grid-placement-editor'
+import { TypographyControls } from './typography-controls'
 import type { Node } from '@/lib/types'
 
 export function ButtonProps({ node }: { node: Node }) {
@@ -108,6 +109,8 @@ export function ButtonProps({ node }: { node: Node }) {
           <option value="700">Bold</option>
         </select>
       </div>
+
+      <TypographyControls node={node} />
     </div>
   )
 }

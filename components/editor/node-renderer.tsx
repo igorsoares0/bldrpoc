@@ -132,6 +132,9 @@ function TextNode({ node }: ContainerRenderProps) {
     fontWeight = '400',
     textAlign = 'left',
     lineHeight,
+    fontFamily,
+    fontStyle,
+    letterSpacing,
   } = node.props
 
   const Tag = variant as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p'
@@ -184,8 +187,10 @@ function TextNode({ node }: ContainerRenderProps) {
         fontWeight,
         textAlign,
         lineHeight,
+        fontStyle,
+        letterSpacing,
         margin: 0,
-        fontFamily: 'inherit',
+        fontFamily: fontFamily || 'inherit',
         maxWidth: '100%',
         outline: isEditing ? 'none' : undefined,
         cursor: isEditing ? 'text' : undefined,

@@ -110,6 +110,9 @@ function TextNode({ node }: PreviewNodeProps) {
     fontWeight = '400',
     textAlign = 'left',
     lineHeight,
+    fontFamily,
+    fontStyle,
+    letterSpacing,
   } = node.props
 
   const Tag = variant as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p'
@@ -122,8 +125,10 @@ function TextNode({ node }: PreviewNodeProps) {
         fontWeight,
         textAlign,
         lineHeight,
+        fontStyle,
+        letterSpacing,
         margin: 0,
-        fontFamily: 'system-ui, sans-serif',
+        fontFamily: fontFamily || 'system-ui, sans-serif',
         maxWidth: '100%',
       }}
     >

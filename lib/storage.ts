@@ -1,5 +1,5 @@
 import type { Page } from './types'
-import { createDefaultContent } from './default-content'
+import { createDefaultContent, createGradientLabsContent } from './default-content'
 
 declare global {
   var __pages: Map<string, Page> | undefined
@@ -13,6 +13,15 @@ function createPages(): Map<string, Page> {
     title: 'My Landing Page',
     slug: 'my-landing-page',
     content: createDefaultContent(),
+    published: false,
+    createdAt: new Date().toISOString(),
+  })
+  const gradientId = 'gradient-labs'
+  map.set(gradientId, {
+    id: gradientId,
+    title: 'Gradient Labs (clone test)',
+    slug: 'gradient-labs',
+    content: createGradientLabsContent(),
     published: false,
     createdAt: new Date().toISOString(),
   })

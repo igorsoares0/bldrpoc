@@ -409,8 +409,14 @@ export function SelectableWrapper({
       onDragEnd={() => {
         endDrag()
       }}
+      onMouseDown={(e) => {
+        if (isEditing) e.stopPropagation()
+      }}
       onClick={(e) => {
-        if (isEditing) return
+        if (isEditing) {
+          e.stopPropagation()
+          return
+        }
         e.stopPropagation()
         selectNode(nodeId)
       }}
@@ -426,15 +432,21 @@ export function SelectableWrapper({
             ? 'cursor-grab active:cursor-grabbing'
             : 'cursor-pointer'
       } ${
-        isSelected
-          ? 'ring-2 ring-accent ring-offset-1 ring-offset-white rounded-sm'
-          : 'hover:ring-1 hover:ring-accent/40 hover:ring-offset-1 hover:ring-offset-white rounded-sm'
+        isEditing
+          ? 'ring-2 ring-pink-500 ring-offset-1 ring-offset-white rounded-sm'
+          : isSelected
+            ? 'ring-2 ring-accent ring-offset-1 ring-offset-white rounded-sm'
+            : 'hover:ring-1 hover:ring-accent/40 hover:ring-offset-1 hover:ring-offset-white rounded-sm'
       }`}
     >
       {children}
-      {isSelected && (
-        <span className="absolute -top-5 left-0 z-10 rounded bg-accent px-1.5 py-0.5 text-[10px] font-medium text-white whitespace-nowrap pointer-events-none">
-          {typeLabels[nodeType]}
+      {(isSelected || isEditing) && (
+        <span
+          className={`absolute -top-5 left-0 z-10 rounded px-1.5 py-0.5 text-[10px] font-medium text-white whitespace-nowrap pointer-events-none ${
+            isEditing ? 'bg-pink-500' : 'bg-accent'
+          }`}
+        >
+          {isEditing ? 'Editing — click outside to finish' : typeLabels[nodeType]}
         </span>
       )}
       {isDropTarget && (

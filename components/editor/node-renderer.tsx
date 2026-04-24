@@ -117,6 +117,26 @@ function SectionNode({ node }: ContainerRenderProps) {
   )
 }
 
+let pendingEditCaret: { x: number; y: number } | null = null
+
+function caretRangeAt(x: number, y: number): Range | null {
+  if (typeof document.caretRangeFromPoint === 'function') {
+    return document.caretRangeFromPoint(x, y)
+  }
+  const doc = document as Document & {
+    caretPositionFromPoint?: (x: number, y: number) => { offsetNode: globalThis.Node; offset: number } | null
+  }
+  if (typeof doc.caretPositionFromPoint === 'function') {
+    const pos = doc.caretPositionFromPoint(x, y)
+    if (!pos) return null
+    const r = document.createRange()
+    r.setStart(pos.offsetNode, pos.offset)
+    r.collapse(true)
+    return r
+  }
+  return null
+}
+
 function TextNode({ node }: ContainerRenderProps) {
   const editingId = useEditorStore((s) => s.editingId)
   const updateNode = useEditorStore((s) => s.updateNode)
@@ -149,12 +169,21 @@ function TextNode({ node }: ContainerRenderProps) {
   useEffect(() => {
     if (!isEditing || !ref.current) return
     ref.current.focus()
+    const sel = window.getSelection()
+    if (!sel) return
+    sel.removeAllRanges()
+
+    const point = pendingEditCaret
+    pendingEditCaret = null
+    const pointRange = point ? caretRangeAt(point.x, point.y) : null
+    if (pointRange && ref.current.contains(pointRange.startContainer)) {
+      sel.addRange(pointRange)
+      return
+    }
+
     const range = document.createRange()
     range.selectNodeContents(ref.current)
-    range.collapse(false)
-    const sel = window.getSelection()
-    sel?.removeAllRanges()
-    sel?.addRange(range)
+    sel.addRange(range)
   }, [isEditing])
 
   return (
@@ -167,6 +196,11 @@ function TextNode({ node }: ContainerRenderProps) {
       }}
       contentEditable={isEditing}
       suppressContentEditableWarning
+      onDoubleClick={(e) => {
+        if (!isEditing) {
+          pendingEditCaret = { x: e.clientX, y: e.clientY }
+        }
+      }}
       onBlur={(e) => {
         if (!isEditing) return
         const next = (e.currentTarget as HTMLElement).innerText
@@ -175,10 +209,16 @@ function TextNode({ node }: ContainerRenderProps) {
       }}
       onKeyDown={(e) => {
         if (!isEditing) return
-        if (e.key === 'Escape' || e.key === 'Enter') {
+        if (e.key === 'Escape') {
           e.preventDefault()
           e.stopPropagation()
           ;(e.currentTarget as HTMLElement).blur()
+          return
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault()
+          e.stopPropagation()
+          document.execCommand('insertLineBreak')
         }
       }}
       style={{
@@ -192,6 +232,7 @@ function TextNode({ node }: ContainerRenderProps) {
         margin: 0,
         fontFamily: fontFamily || 'inherit',
         maxWidth: '100%',
+        whiteSpace: 'pre-wrap',
         outline: isEditing ? 'none' : undefined,
         cursor: isEditing ? 'text' : undefined,
       }}

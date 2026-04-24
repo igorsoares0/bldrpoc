@@ -130,6 +130,7 @@ function TextNode({ node }: PreviewNodeProps) {
         margin: 0,
         fontFamily: fontFamily || 'system-ui, sans-serif',
         maxWidth: '100%',
+        whiteSpace: 'pre-wrap',
       }}
     >
       {content}

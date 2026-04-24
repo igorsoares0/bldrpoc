@@ -2,7 +2,6 @@
 
 import { useEditorStore } from '@/lib/store'
 import { Input } from '@/components/ui/input'
-import { GridPlacementEditor } from './grid-placement-editor'
 import { TypographyControls } from './typography-controls'
 import type { Node } from '@/lib/types'
 
@@ -42,8 +41,6 @@ export function FormProps({ node }: { node: Node }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <GridPlacementEditor node={node} />
-
       <Input
         label="Placeholder"
         value={node.props.placeholder ?? 'your@email.com'}

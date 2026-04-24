@@ -2,7 +2,6 @@
 
 import { useEditorStore } from '@/lib/store'
 import { Input } from '@/components/ui/input'
-import { GridPlacementEditor } from './grid-placement-editor'
 import type { Node } from '@/lib/types'
 
 export function ImageProps({ node }: { node: Node }) {
@@ -10,7 +9,6 @@ export function ImageProps({ node }: { node: Node }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <GridPlacementEditor node={node} />
       <Input
         label="Image URL"
         value={node.props.src || ''}

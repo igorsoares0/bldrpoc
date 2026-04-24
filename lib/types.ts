@@ -14,6 +14,8 @@ export type GridProps = {
   mobile?: GridPlacement
 }
 
+export type MenuSlot = 'left' | 'center' | 'right'
+
 export type Node = {
   id: string
   type: NodeType

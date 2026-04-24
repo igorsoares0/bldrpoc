@@ -7,6 +7,8 @@ import {
   gridSectionClassName,
   isPlaceable,
 } from '@/lib/grid-utils'
+import { MENU_SLOTS, partitionMenuChildren } from '@/lib/menu-utils'
+import type { MenuSlot } from '@/lib/types'
 
 interface PreviewNodeProps {
   node: Node
@@ -326,15 +328,47 @@ function FormNode({ node }: PreviewNodeProps) {
   )
 }
 
-function MenuBarNode({ node, insideGrid }: PreviewNodeProps) {
+function MenuBarNode({ node }: PreviewNodeProps) {
   const { backgroundColor = '#09090b', padding = '16px 32px', minHeight } = node.props
+  const partitioned = partitionMenuChildren(node)
   return (
-    <GridSectionWrapper
-      node={node}
-      tag="nav"
-      baseStyle={{ backgroundColor, padding, minHeight }}
-      insideGrid={insideGrid}
-    />
+    <nav
+      style={{
+        backgroundColor,
+        padding,
+        minHeight,
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)',
+        alignItems: 'center',
+        gap: 16,
+        width: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
+      {MENU_SLOTS.map((slot) => (
+        <PreviewMenuSlot key={slot} slot={slot} items={partitioned[slot]} />
+      ))}
+    </nav>
+  )
+}
+
+function PreviewMenuSlot({ slot, items }: { slot: MenuSlot; items: Node[] }) {
+  const justifyContent =
+    slot === 'left' ? 'flex-start' : slot === 'right' ? 'flex-end' : 'center'
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent,
+        gap: 16,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {items.map((child) => (
+        <PreviewNode key={child.id} node={child} insideGrid={false} />
+      ))}
+    </div>
   )
 }
 

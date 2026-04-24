@@ -12,6 +12,7 @@ import {
   defaultMobilePlacement,
   getActivePlacement,
   isGridContainerType,
+  isMenuModeContainerType,
   isPlaceable,
   placementToStyle,
   snapPlacementToSiblings,
@@ -32,6 +33,7 @@ const typeLabels: Record<NodeType, string> = {
 interface SelectableWrapperProps {
   node: Node
   parentId?: string
+  parentType?: NodeType
   sectionId?: string
   parentGridLayout?: boolean
   indexInParent?: number
@@ -105,7 +107,18 @@ function readSectionMetrics(
   }
 }
 
-function placeableFitStyle(node: Node): CSSProperties {
+function placeableFitStyle(node: Node, parentType?: NodeType): CSSProperties {
+  if (isMenuModeContainerType(parentType)) {
+    const ta = node.type === 'text' ? (node.props.textAlign as string | undefined) : undefined
+    const justifySelf =
+      ta === 'right' ? 'end' : ta === 'center' ? 'center' : 'start'
+    return {
+      justifySelf,
+      alignSelf: 'center',
+      minWidth: 0,
+      whiteSpace: 'nowrap',
+    }
+  }
   if (node.type === 'text') {
     const ta = node.props.textAlign as string | undefined
     const justifySelf =
@@ -130,6 +143,7 @@ function placeableFitStyle(node: Node): CSSProperties {
 
 export function SelectableWrapper({
   node,
+  parentType,
   sectionId,
   parentGridLayout,
   indexInParent = 0,
@@ -147,6 +161,8 @@ export function SelectableWrapper({
   const placeNodeInGrid = useEditorStore((s) => s.placeNodeInGrid)
   const updateNode = useEditorStore((s) => s.updateNode)
   const viewport = useEditorStore((s) => s.viewport)
+  const beginMenuDrag = useEditorStore((s) => s.beginMenuDrag)
+  const endMenuDrag = useEditorStore((s) => s.endMenuDrag)
 
   const [resizePreview, setResizePreview] = useState<GridPlacement | null>(null)
   const resizingRef = useRef(false)
@@ -158,14 +174,16 @@ export function SelectableWrapper({
   const nodeIsPlaceable = isPlaceable(nodeType)
   const isGridContainer = isGridContainerType(nodeType)
   const isResizing = resizePreview !== null
+  const isMenuItem = parentType === 'menu-bar'
   const isDraggable =
     nodeIsPlaceable &&
-    Boolean(parentGridLayout) &&
     Boolean(sectionId) &&
     !isEditing &&
-    !isResizing
+    !isResizing &&
+    (isMenuItem || Boolean(parentGridLayout))
   const showResizeHandles =
     isSelected &&
+    !isMenuItem &&
     (nodeType === 'button' ||
       nodeType === 'image' ||
       nodeType === 'form' ||
@@ -177,10 +195,10 @@ export function SelectableWrapper({
   const effectivePlacement = resizePreview ?? activePlacement
 
   const placementStyle: CSSProperties =
-    parentGridLayout && nodeIsPlaceable
+    parentGridLayout && nodeIsPlaceable && !isMenuItem
       ? {
           ...placementToStyle(effectivePlacement),
-          ...placeableFitStyle(node),
+          ...placeableFitStyle(node, parentType),
         }
       : {}
 
@@ -203,15 +221,27 @@ export function SelectableWrapper({
     const rowHeight = sectionNode?.props.rowHeight ?? DEFAULT_ROW_HEIGHT
     const metrics = readSectionMetrics(sectionEl, cols, rowHeight)
     const start = activePlacement
+    const menuMode = isMenuModeContainerType(sectionNode?.type)
+    const wrapperEl = wrapperRef.current
+    const minColSpan = menuMode && wrapperEl
+      ? Math.max(
+          1,
+          Math.ceil(
+            Math.max(wrapperEl.scrollWidth, wrapperEl.getBoundingClientRect().width) /
+              metrics.cellWidth,
+          ),
+        )
+      : 1
+
+    function constrain(p: GridPlacement): GridPlacement {
+      if (!menuMode) return p
+      const colSpan = Math.max(p.colSpan, minColSpan)
+      return { col: p.col, row: 1, colSpan, rowSpan: 1 }
+    }
 
     function onMove(ev: MouseEvent) {
-      const placement = computeResizePlacement(
-        anchor,
-        ev.clientX,
-        ev.clientY,
-        start,
-        metrics,
-        cols,
+      const placement = constrain(
+        computeResizePlacement(anchor, ev.clientX, ev.clientY, start, metrics, cols),
       )
       setResizePreview(placement)
     }
@@ -219,13 +249,8 @@ export function SelectableWrapper({
     function onUp(ev: MouseEvent) {
       document.removeEventListener('mousemove', onMove)
       document.removeEventListener('mouseup', onUp)
-      const placement = computeResizePlacement(
-        anchor,
-        ev.clientX,
-        ev.clientY,
-        start,
-        metrics,
-        cols,
+      const placement = constrain(
+        computeResizePlacement(anchor, ev.clientX, ev.clientY, start, metrics, cols),
       )
       setResizePreview(null)
       setTimeout(() => {
@@ -269,6 +294,7 @@ export function SelectableWrapper({
       ref={wrapperRef}
       data-node-id={nodeId}
       data-node-type={nodeType}
+      data-menu-item={isMenuItem ? 'true' : undefined}
       style={placementStyle}
       draggable={isDraggable}
       onDragStart={(e) => {
@@ -278,6 +304,20 @@ export function SelectableWrapper({
         }
         if (!isDraggable || !sectionId) return
         e.stopPropagation()
+
+        if (isMenuItem) {
+          beginMenuDrag({
+            id: nodeId,
+            menuBarId: sectionId,
+            sourceSlot:
+              node.props.slot === 'center' || node.props.slot === 'right'
+                ? node.props.slot
+                : 'left',
+          })
+          e.dataTransfer.setData('text/menu-item', nodeId)
+          e.dataTransfer.effectAllowed = 'move'
+          return
+        }
 
         const sectionEl = document.querySelector<HTMLElement>(
           `[data-grid-section][data-node-id="${sectionId}"]`,
@@ -304,6 +344,18 @@ export function SelectableWrapper({
           rowSpan: 4,
         }
 
+        const sectionType = sectionNode?.type
+        const isMenuMode = isMenuModeContainerType(sectionType)
+        const naturalWidth = isMenuMode
+          ? Math.max(
+              e.currentTarget.scrollWidth,
+              e.currentTarget.getBoundingClientRect().width,
+            )
+          : 0
+        const minColSpan = isMenuMode
+          ? Math.max(1, Math.ceil(naturalWidth / metrics.cellWidth))
+          : 1
+
         const session: DragSession = {
           id: nodeId,
           sectionId,
@@ -313,9 +365,13 @@ export function SelectableWrapper({
           rowHeight: metrics.rowHeight,
           offsetCol,
           offsetRow,
-          colSpan: draggedPlacement.colSpan,
-          rowSpan: draggedPlacement.rowSpan,
+          colSpan: isMenuMode
+            ? Math.max(draggedPlacement.colSpan, minColSpan)
+            : draggedPlacement.colSpan,
+          rowSpan: isMenuMode ? 1 : draggedPlacement.rowSpan,
           snapshot,
+          isMenuMode,
+          minColSpan,
         }
 
         e.dataTransfer.setData('text/node-id', nodeId)
@@ -341,15 +397,23 @@ export function SelectableWrapper({
         const cursorRow = (e.clientY - metrics.contentTop) / metrics.rowHeight
         const raw: GridPlacement = {
           col: Math.floor(cursorCol - dragSession.offsetCol) + 1,
-          row: Math.floor(cursorRow - dragSession.offsetRow) + 1,
-          colSpan: dragSession.colSpan,
-          rowSpan: dragSession.rowSpan,
+          row: dragSession.isMenuMode
+            ? 1
+            : Math.floor(cursorRow - dragSession.offsetRow) + 1,
+          colSpan: dragSession.isMenuMode
+            ? Math.max(dragSession.colSpan, dragSession.minColSpan)
+            : dragSession.colSpan,
+          rowSpan: dragSession.isMenuMode ? 1 : dragSession.rowSpan,
         }
         const snapped = snapPlacementToSiblings(
           raw,
           dragSession.snapshot,
           dragSession.id,
         )
+        if (dragSession.isMenuMode) {
+          snapped.placement.row = 1
+          snapped.placement.rowSpan = 1
+        }
         const placement = clampPlacement(snapped.placement, dragSession.cols)
         setDragGhost(placement)
         setDragSnapGuides(
@@ -386,15 +450,23 @@ export function SelectableWrapper({
         const cursorRow = (e.clientY - metrics.contentTop) / metrics.rowHeight
         const raw: GridPlacement = {
           col: Math.floor(cursorCol - dragSession.offsetCol) + 1,
-          row: Math.floor(cursorRow - dragSession.offsetRow) + 1,
-          colSpan: dragSession.colSpan,
-          rowSpan: dragSession.rowSpan,
+          row: dragSession.isMenuMode
+            ? 1
+            : Math.floor(cursorRow - dragSession.offsetRow) + 1,
+          colSpan: dragSession.isMenuMode
+            ? Math.max(dragSession.colSpan, dragSession.minColSpan)
+            : dragSession.colSpan,
+          rowSpan: dragSession.isMenuMode ? 1 : dragSession.rowSpan,
         }
         const snapped = snapPlacementToSiblings(
           raw,
           dragSession.snapshot,
           dragSession.id,
         )
+        if (dragSession.isMenuMode) {
+          snapped.placement.row = 1
+          snapped.placement.rowSpan = 1
+        }
         const placement = clampPlacement(snapped.placement, dragSession.cols)
 
         placeNodeInGrid(
@@ -408,6 +480,7 @@ export function SelectableWrapper({
       }}
       onDragEnd={() => {
         endDrag()
+        endMenuDrag()
       }}
       onMouseDown={(e) => {
         if (isEditing) e.stopPropagation()

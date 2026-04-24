@@ -1,4 +1,5 @@
 import type { GridPlacement, GridProps, Node, NodeType, Viewport } from './types'
+import { migrateMenuBarChildren } from './menu-utils'
 
 export const GRID_COLS_DESKTOP = 24
 export const GRID_COLS_MOBILE = 8
@@ -8,6 +9,7 @@ export const REFERENCE_DESKTOP_WIDTH = 1280
 
 export const LEAF_TYPES: NodeType[] = ['text', 'image', 'button', 'form']
 export const GRID_CONTAINER_TYPES: NodeType[] = ['section', 'menu-bar', 'footer']
+export const MENU_MODE_CONTAINER_TYPES: NodeType[] = ['menu-bar']
 
 export function isLeafType(type: NodeType): boolean {
   return LEAF_TYPES.includes(type)
@@ -15,6 +17,10 @@ export function isLeafType(type: NodeType): boolean {
 
 export function isGridContainerType(type: NodeType): boolean {
   return GRID_CONTAINER_TYPES.includes(type)
+}
+
+export function isMenuModeContainerType(type: NodeType | undefined | null): boolean {
+  return type ? MENU_MODE_CONTAINER_TYPES.includes(type) : false
 }
 
 export function isPlaceable(type: NodeType): boolean {
@@ -237,7 +243,12 @@ export function snapPlacementToSiblings(
   }
 }
 
-function placeableFitCss(node: Node): string {
+function placeableFitCss(node: Node, parentType?: NodeType): string {
+  if (isMenuModeContainerType(parentType)) {
+    const ta = node.type === 'text' ? (node.props.textAlign as string | undefined) : undefined
+    const justify = ta === 'right' ? 'end' : ta === 'center' ? 'center' : 'start'
+    return `justify-self:${justify};align-self:center;min-width:0;white-space:nowrap;`
+  }
   if (node.type === 'text') {
     const ta = node.props.textAlign as string | undefined
     const justify = ta === 'right' ? 'end' : ta === 'center' ? 'center' : 'start'
@@ -264,7 +275,7 @@ export function buildGridStyles(section: Node): string {
   const desktopRules = placeables
     .map((child, i) => {
       const p = getActivePlacement(child, 'desktop', i)
-      return `.${cls} > [data-id="${cssId(child.id)}"]{grid-column:${p.col}/span ${p.colSpan};grid-row:${p.row}/span ${p.rowSpan};${placeableFitCss(child)}}`
+      return `.${cls} > [data-id="${cssId(child.id)}"]{grid-column:${p.col}/span ${p.colSpan};grid-row:${p.row}/span ${p.rowSpan};${placeableFitCss(child, section.type)}}`
     })
     .join('')
 
@@ -370,9 +381,10 @@ export function migrateTreeToGrid(tree: Node): { tree: Node; changed: boolean } 
   }
 
   function walkContainer(container: Node): Node {
+    const isMenuBar = container.type === 'menu-bar'
     const newChildren = (container.children ?? []).map((child, i) => {
       let next = child
-      if (isPlaceable(next.type)) next = ensurePlacement(next, i)
+      if (!isMenuBar && isPlaceable(next.type)) next = ensurePlacement(next, i)
       if (isGridContainerType(next.type)) next = walkContainer(next)
       return next
     })
@@ -383,11 +395,17 @@ export function migrateTreeToGrid(tree: Node): { tree: Node; changed: boolean } 
     if (container.props.freeLayout || container.props.gridLayout !== undefined) {
       changed = true
     }
-    return {
+    let result: Node = {
       ...container,
       props: stripLegacyContainerProps(container.props),
       children: newChildren,
     }
+    if (isMenuBar) {
+      const migrated = migrateMenuBarChildren(result)
+      if (migrated.changed) changed = true
+      result = migrated.node
+    }
+    return result
   }
 
   function walk(node: Node, depth: number): Node {

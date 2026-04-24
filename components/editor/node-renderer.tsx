@@ -1,15 +1,17 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useRef } from 'react'
 import { SelectableWrapper } from './selectable-wrapper'
 import { GridOverlay } from './grid-overlay'
 import { useEditorStore } from '@/lib/store'
 import { colsForViewport, gridSectionClassName, DEFAULT_ROW_HEIGHT } from '@/lib/grid-utils'
-import type { Node } from '@/lib/types'
+import { MENU_SLOTS, partitionMenuChildren } from '@/lib/menu-utils'
+import type { MenuSlot, Node, NodeType } from '@/lib/types'
 
 interface NodeRendererProps {
   node: Node
   parentId?: string
+  parentType?: NodeType
   sectionId?: string
   parentGridLayout?: boolean
   indexInParent?: number
@@ -27,6 +29,7 @@ function renderChildren(node: Node, sectionId?: string, parentGridLayout?: boole
       key={child.id}
       node={child}
       parentId={node.id}
+      parentType={node.type}
       sectionId={sectionId}
       parentGridLayout={parentGridLayout}
       indexInParent={i}
@@ -385,11 +388,143 @@ function FormNode({ node }: ContainerRenderProps) {
 
 function MenuBarNode({ node }: ContainerRenderProps) {
   const { backgroundColor = '#09090b', padding = '16px 32px', minHeight } = node.props
+  const partitioned = partitionMenuChildren(node)
+  const menuDragSession = useEditorStore((s) => s.menuDragSession)
+  const menuDropPreview = useEditorStore((s) => s.menuDropPreview)
+  const isActive = menuDragSession?.menuBarId === node.id
+
   return (
-    <GridContainer
-      node={node}
-      tag="nav"
-      baseStyle={{ backgroundColor, padding, minHeight }}
+    <nav
+      data-menu-bar="true"
+      data-node-id={node.id}
+      style={{
+        backgroundColor,
+        padding,
+        minHeight,
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)',
+        alignItems: 'center',
+        gap: 16,
+        position: 'relative',
+        width: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
+      {MENU_SLOTS.map((slot) => (
+        <MenuSlotEl
+          key={slot}
+          menuBarId={node.id}
+          slot={slot}
+          items={partitioned[slot]}
+          dropIndex={
+            isActive && menuDropPreview?.slot === slot ? menuDropPreview.index : null
+          }
+        />
+      ))}
+    </nav>
+  )
+}
+
+function MenuSlotEl({
+  menuBarId,
+  slot,
+  items,
+  dropIndex,
+}: {
+  menuBarId: string
+  slot: MenuSlot
+  items: Node[]
+  dropIndex: number | null
+}) {
+  const menuDragSession = useEditorStore((s) => s.menuDragSession)
+  const setMenuDropPreview = useEditorStore((s) => s.setMenuDropPreview)
+  const reorderMenuChild = useEditorStore((s) => s.reorderMenuChild)
+  const endMenuDrag = useEditorStore((s) => s.endMenuDrag)
+
+  const justifyContent =
+    slot === 'left' ? 'flex-start' : slot === 'right' ? 'flex-end' : 'center'
+
+  function computeIndex(e: React.DragEvent<HTMLDivElement>): number {
+    const slotEl = e.currentTarget
+    const itemEls = Array.from(
+      slotEl.querySelectorAll<HTMLElement>(':scope > [data-menu-item="true"]'),
+    )
+    for (let k = 0; k < itemEls.length; k++) {
+      const r = itemEls[k].getBoundingClientRect()
+      if (e.clientX < r.left + r.width / 2) return k
+    }
+    return itemEls.length
+  }
+
+  const isReceptive =
+    menuDragSession !== null && menuDragSession.menuBarId === menuBarId
+
+  return (
+    <div
+      data-menu-slot={slot}
+      onDragOver={(e) => {
+        if (!isReceptive) return
+        e.preventDefault()
+        e.stopPropagation()
+        e.dataTransfer.dropEffect = 'move'
+        setMenuDropPreview({ menuBarId, slot, index: computeIndex(e) })
+      }}
+      onDragLeave={(e) => {
+        if (!isReceptive) return
+        const next = e.relatedTarget as globalThis.Node | null
+        if (next && e.currentTarget.contains(next)) return
+        setMenuDropPreview(null)
+      }}
+      onDrop={(e) => {
+        if (!isReceptive || !menuDragSession) return
+        e.preventDefault()
+        e.stopPropagation()
+        reorderMenuChild(menuBarId, menuDragSession.id, slot, computeIndex(e))
+        endMenuDrag()
+      }}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent,
+        gap: 16,
+        minHeight: 24,
+        minWidth: isReceptive && items.length === 0 ? 80 : undefined,
+        position: 'relative',
+        outline:
+          isReceptive && items.length === 0
+            ? '1px dashed rgba(236,72,153,0.5)'
+            : undefined,
+      }}
+    >
+      {items.map((child, i) => (
+        <Fragment key={child.id}>
+          {dropIndex === i && <DropIndicator />}
+          <NodeRenderer
+            node={child}
+            parentId={menuBarId}
+            parentType="menu-bar"
+            sectionId={menuBarId}
+            parentGridLayout={false}
+            indexInParent={i}
+          />
+        </Fragment>
+      ))}
+      {dropIndex === items.length && <DropIndicator />}
+    </div>
+  )
+}
+
+function DropIndicator() {
+  return (
+    <span
+      aria-hidden
+      style={{
+        width: 2,
+        alignSelf: 'stretch',
+        minHeight: 20,
+        backgroundColor: '#ec4899',
+        borderRadius: 1,
+      }}
     />
   )
 }
@@ -417,6 +552,7 @@ const renderers: Record<string, React.FC<ContainerRenderProps>> = {
 export function NodeRenderer({
   node,
   parentId,
+  parentType,
   sectionId,
   parentGridLayout,
   indexInParent = 0,
@@ -436,6 +572,7 @@ export function NodeRenderer({
     <SelectableWrapper
       node={node}
       parentId={parentId}
+      parentType={parentType}
       sectionId={effectiveSectionId}
       parentGridLayout={parentGridLayout}
       indexInParent={indexInParent}

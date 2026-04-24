@@ -1,7 +1,7 @@
 'use client'
 
 import { create } from 'zustand'
-import type { GridPlacement, Node, Page, Viewport } from './types'
+import type { GridPlacement, MenuSlot, Node, Page, Viewport } from './types'
 import {
   updateNodeById,
   removeNodeById,
@@ -15,6 +15,7 @@ import {
   DEFAULT_ROW_HEIGHT,
   type SnapGuides,
 } from './grid-utils'
+import { MENU_SLOTS, getMenuSlot } from './menu-utils'
 
 export type DragSession = {
   id: string
@@ -28,6 +29,20 @@ export type DragSession = {
   colSpan: number
   rowSpan: number
   snapshot: Record<string, GridPlacement>
+  isMenuMode: boolean
+  minColSpan: number
+}
+
+export type MenuDragSession = {
+  id: string
+  menuBarId: string
+  sourceSlot: MenuSlot
+}
+
+export type MenuDropPreview = {
+  menuBarId: string
+  slot: MenuSlot
+  index: number
 }
 
 const HISTORY_LIMIT = 50
@@ -43,6 +58,8 @@ type EditorState = {
   dragSession: DragSession | null
   dragGhost: GridPlacement | null
   dragSnapGuides: SnapGuides | null
+  menuDragSession: MenuDragSession | null
+  menuDropPreview: MenuDropPreview | null
   past: Node[]
   future: Node[]
 
@@ -66,6 +83,15 @@ type EditorState = {
   setDragGhost: (ghost: GridPlacement | null) => void
   setDragSnapGuides: (guides: SnapGuides | null) => void
   endDrag: () => void
+  beginMenuDrag: (session: MenuDragSession) => void
+  setMenuDropPreview: (preview: MenuDropPreview | null) => void
+  endMenuDrag: () => void
+  reorderMenuChild: (
+    menuBarId: string,
+    childId: string,
+    targetSlot: MenuSlot,
+    targetIndex: number,
+  ) => void
   setViewport: (v: Viewport) => void
   saveToServer: () => Promise<void>
   updatePageTitle: (title: string) => void
@@ -133,6 +159,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   dragSession: null,
   dragGhost: null,
   dragSnapGuides: null,
+  menuDragSession: null,
+  menuDropPreview: null,
   past: [],
   future: [],
 
@@ -149,6 +177,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       dragSession: null,
       dragGhost: null,
       dragSnapGuides: null,
+      menuDragSession: null,
+      menuDropPreview: null,
       past: [],
       future: [],
     })
@@ -260,6 +290,42 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setDragSnapGuides: (guides) => set({ dragSnapGuides: guides }),
   endDrag: () =>
     set({ dragSession: null, dragGhost: null, dragSnapGuides: null }),
+
+  beginMenuDrag: (session) =>
+    set({ menuDragSession: session, menuDropPreview: null }),
+  setMenuDropPreview: (preview) => set({ menuDropPreview: preview }),
+  endMenuDrag: () => set({ menuDragSession: null, menuDropPreview: null }),
+
+  reorderMenuChild: (menuBarId, childId, targetSlot, targetIndex) => {
+    const { tree, past } = get()
+    const newTree = updateNodeById(tree, menuBarId, (menuBar) => {
+      const children = menuBar.children ?? []
+      const dragged = children.find((c) => c.id === childId)
+      if (!dragged) return menuBar
+      const others = children.filter((c) => c.id !== childId)
+      const updated: Node = {
+        ...dragged,
+        props: { ...dragged.props, slot: targetSlot },
+      }
+      const result: Node[] = []
+      for (const slot of MENU_SLOTS) {
+        const slotItems = others.filter((c) => getMenuSlot(c) === slot)
+        if (slot === targetSlot) {
+          const clamped = Math.max(0, Math.min(targetIndex, slotItems.length))
+          result.push(...slotItems.slice(0, clamped), updated, ...slotItems.slice(clamped))
+        } else {
+          result.push(...slotItems)
+        }
+      }
+      return { ...menuBar, children: result }
+    })
+    set({
+      tree: newTree,
+      isDirty: true,
+      past: pushHistory(past, tree),
+      future: [],
+    })
+  },
 
   setViewport: (v) => set({ viewport: v }),
 

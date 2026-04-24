@@ -3,7 +3,8 @@ import { migrateMenuBarChildren } from './menu-utils'
 
 export const GRID_COLS_DESKTOP = 24
 export const GRID_COLS_MOBILE = 8
-export const DEFAULT_ROW_HEIGHT = 24
+export const DEFAULT_ROW_HEIGHT = 8
+export const ROW_SCHEMA_VERSION = 2
 export const MOBILE_BREAKPOINT_PX = 768
 export const REFERENCE_DESKTOP_WIDTH = 1280
 
@@ -36,7 +37,7 @@ export function colsForViewport(viewport: Viewport): number {
 }
 
 export function defaultMobilePlacement(index: number): GridPlacement {
-  const rowSpan = 4
+  const rowSpan = 12
   return {
     col: 1,
     row: index * rowSpan + 1,
@@ -46,7 +47,7 @@ export function defaultMobilePlacement(index: number): GridPlacement {
 }
 
 export function defaultDesktopPlacement(index: number): GridPlacement {
-  const rowSpan = 4
+  const rowSpan = 12
   return {
     col: 1,
     row: index * rowSpan + 1,
@@ -304,7 +305,11 @@ function cssId(id: string): string {
   return id.replace(/[^a-zA-Z0-9_-]/g, '_')
 }
 
+const LEGACY_ROW_HEIGHT = 24
+
 function legacyXyToPlacement(node: Node): GridPlacement | null {
+  // Produces placements in legacy 24px-row units. The row-schema pass
+  // multiplies them by 3 to land on the new 8px-row units.
   const x = node.props.x
   const y = node.props.y
   const w = node.props.w
@@ -319,8 +324,55 @@ function legacyXyToPlacement(node: Node): GridPlacement | null {
     Math.min(GRID_COLS_DESKTOP - colSpan + 1, Math.round(x / cellW) + 1),
   )
   const rowSpan = node.type === 'image' ? 8 : 4
-  const row = Math.max(1, Math.round(y / DEFAULT_ROW_HEIGHT) + 1)
+  const row = Math.max(1, Math.round(y / LEGACY_ROW_HEIGHT) + 1)
   return { col, row, colSpan, rowSpan }
+}
+
+function legacyDefaultPlacement(index: number, cols: number): GridPlacement {
+  // Pre-schema-v2 defaults (24px-row units). The schema pass triples them.
+  const rowSpan = 4
+  return { col: 1, row: index * rowSpan + 1, colSpan: cols, rowSpan }
+}
+
+function tripleRows(p: GridPlacement): GridPlacement {
+  return {
+    ...p,
+    row: (p.row - 1) * 3 + 1,
+    rowSpan: p.rowSpan * 3,
+  }
+}
+
+function migrateContainerRows(container: Node): Node {
+  if (container.type === 'menu-bar') return container
+  const rh = container.props.rowHeight
+  if (rh !== undefined && rh !== LEGACY_ROW_HEIGHT) return container
+
+  const newChildren = (container.children ?? []).map((child) => {
+    const grid = child.props.grid as GridProps | undefined
+    if (!grid) return child
+    const next: GridProps = { desktop: tripleRows(grid.desktop) }
+    if (grid.mobile) next.mobile = tripleRows(grid.mobile)
+    return { ...child, props: { ...child.props, grid: next } }
+  })
+
+  const nextProps = { ...container.props }
+  if (rh === LEGACY_ROW_HEIGHT) delete nextProps.rowHeight
+
+  return { ...container, props: nextProps, children: newChildren }
+}
+
+function rowSchemaPass(tree: Node): Node {
+  function walk(node: Node, isRoot: boolean): Node {
+    let next = node
+    if (!isRoot && isGridContainerType(next.type) && next.type !== 'menu-bar') {
+      next = migrateContainerRows(next)
+    }
+    if (next.children) {
+      next = { ...next, children: next.children.map((c) => walk(c, false)) }
+    }
+    return next
+  }
+  return walk(tree, true)
 }
 
 function stripLegacyLeafProps(props: Record<string, unknown>): Record<string, unknown> {
@@ -342,6 +394,18 @@ function stripLegacyContainerProps(
 
 export function migrateTreeToGrid(tree: Node): { tree: Node; changed: boolean } {
   let changed = false
+  const isLegacyRowSchema = tree.props.rowSchema !== ROW_SCHEMA_VERSION
+
+  function defaultDesktop(index: number): GridPlacement {
+    return isLegacyRowSchema
+      ? legacyDefaultPlacement(index, GRID_COLS_DESKTOP)
+      : defaultDesktopPlacement(index)
+  }
+  function defaultMobile(index: number): GridPlacement {
+    return isLegacyRowSchema
+      ? legacyDefaultPlacement(index, GRID_COLS_MOBILE)
+      : defaultMobilePlacement(index)
+  }
 
   function ensurePlacement(node: Node, index: number): Node {
     let next = node
@@ -371,8 +435,8 @@ export function migrateTreeToGrid(tree: Node): { tree: Node; changed: boolean } 
         props: {
           ...next.props,
           grid: {
-            desktop: defaultDesktopPlacement(index),
-            mobile: defaultMobilePlacement(index),
+            desktop: defaultDesktop(index),
+            mobile: defaultMobile(index),
           },
         },
       }
@@ -433,7 +497,15 @@ export function migrateTreeToGrid(tree: Node): { tree: Node; changed: boolean } 
     return node
   }
 
-  const newTree = walk(tree, 0)
+  let newTree = walk(tree, 0)
+  if (isLegacyRowSchema) {
+    newTree = rowSchemaPass(newTree)
+    newTree = {
+      ...newTree,
+      props: { ...newTree.props, rowSchema: ROW_SCHEMA_VERSION },
+    }
+    changed = true
+  }
   return { tree: newTree, changed }
 }
 

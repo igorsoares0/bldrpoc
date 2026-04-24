@@ -27,6 +27,10 @@ export function EditorShell({ initialPage }: EditorShellProps) {
       const editingId = useEditorStore.getState().editingId
       const targetIsEditable =
         e.target instanceof HTMLElement && e.target.isContentEditable
+      const targetIsFormElement =
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement
       if (editingId || targetIsEditable) {
         if ((e.metaKey || e.ctrlKey) && e.key === 's') {
           e.preventDefault()
@@ -37,9 +41,7 @@ export function EditorShell({ initialPage }: EditorShellProps) {
       if (
         (e.key === 'Delete' || e.key === 'Backspace') &&
         selectedId &&
-        !(e.target instanceof HTMLInputElement) &&
-        !(e.target instanceof HTMLTextAreaElement) &&
-        !(e.target instanceof HTMLSelectElement)
+        !targetIsFormElement
       ) {
         e.preventDefault()
         deleteNode(selectedId)
@@ -59,6 +61,28 @@ export function EditorShell({ initialPage }: EditorShellProps) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'y') {
         e.preventDefault()
         useEditorStore.getState().redo()
+      }
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.key === 'd' &&
+        selectedId &&
+        !targetIsFormElement
+      ) {
+        e.preventDefault()
+        useEditorStore.getState().duplicateNode(selectedId)
+      }
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.key === 'c' &&
+        selectedId &&
+        !targetIsFormElement
+      ) {
+        e.preventDefault()
+        useEditorStore.getState().copyNode(selectedId)
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'v' && !targetIsFormElement) {
+        e.preventDefault()
+        useEditorStore.getState().pasteNode()
       }
     }
 

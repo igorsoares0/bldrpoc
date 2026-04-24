@@ -1,11 +1,15 @@
 'use client'
 
 import { create } from 'zustand'
-import type { GridPlacement, MenuSlot, Node, Page, Viewport } from './types'
+import type { GridPlacement, GridProps, MenuSlot, Node, Page, Viewport } from './types'
 import {
   updateNodeById,
   removeNodeById,
   addNodeToParent,
+  insertNodeAfter,
+  cloneNodeWithNewIds,
+  getNodeById,
+  getParentOfNode,
 } from './tree-utils'
 import {
   collectPlaceables,
@@ -60,6 +64,7 @@ type EditorState = {
   dragSnapGuides: SnapGuides | null
   menuDragSession: MenuDragSession | null
   menuDropPreview: MenuDropPreview | null
+  clipboard: Node | null
   past: Node[]
   future: Node[]
 
@@ -70,6 +75,9 @@ type EditorState = {
   updateNode: (id: string, props: Record<string, any>) => void
   addNode: (parentId: string, node: Node) => void
   deleteNode: (id: string) => void
+  duplicateNode: (id: string) => void
+  copyNode: (id: string) => void
+  pasteNode: () => void
   placeNodeInGrid: (
     sectionId: string,
     draggedId: string,
@@ -108,6 +116,36 @@ const emptyTree: Node = {
   type: 'section',
   props: {},
   children: [],
+}
+
+function shiftCopyPlacement(node: Node): void {
+  const grid = node.props.grid as GridProps | undefined
+  if (!grid) return
+  if (grid.desktop) {
+    grid.desktop = { ...grid.desktop, row: grid.desktop.row + grid.desktop.rowSpan }
+  }
+  if (grid.mobile) {
+    grid.mobile = { ...grid.mobile, row: grid.mobile.row + grid.mobile.rowSpan }
+  }
+}
+
+const TOP_LEVEL_TYPES = new Set(['section', 'menu-bar', 'footer'])
+const LEAF_TYPES_SET = new Set(['text', 'image', 'button', 'form'])
+const LEAF_CONTAINER_TYPES = new Set(['section', 'menu-bar', 'footer'])
+
+function isPasteCompatible(
+  copy: Node,
+  targetParent: Node,
+  rootId: string,
+): boolean {
+  const isRoot = targetParent.id === rootId
+  if (LEAF_TYPES_SET.has(copy.type)) {
+    return !isRoot && LEAF_CONTAINER_TYPES.has(targetParent.type)
+  }
+  if (TOP_LEVEL_TYPES.has(copy.type)) {
+    return isRoot
+  }
+  return false
 }
 
 function applyPlacementsToChildren(
@@ -161,6 +199,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   dragSnapGuides: null,
   menuDragSession: null,
   menuDropPreview: null,
+  clipboard: null,
   past: [],
   future: [],
 
@@ -227,6 +266,57 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       tree: newTree,
       isDirty: true,
       selectedId: selectedId === id ? null : selectedId,
+      past: pushHistory(past, tree),
+      future: [],
+    })
+  },
+
+  duplicateNode: (id) => {
+    const { tree, past } = get()
+    if (id === tree.id) return
+    const source = getNodeById(tree, id)
+    if (!source) return
+    const copy = cloneNodeWithNewIds(source)
+    shiftCopyPlacement(copy)
+    const newTree = insertNodeAfter(tree, id, copy)
+    set({
+      tree: newTree,
+      isDirty: true,
+      selectedId: copy.id,
+      past: pushHistory(past, tree),
+      future: [],
+    })
+  },
+
+  copyNode: (id) => {
+    const { tree } = get()
+    if (id === tree.id) return
+    const source = getNodeById(tree, id)
+    if (!source) return
+    set({ clipboard: cloneNodeWithNewIds(source) })
+  },
+
+  pasteNode: () => {
+    const { clipboard, tree, selectedId, past } = get()
+    if (!clipboard) return
+    const copy = cloneNodeWithNewIds(clipboard)
+    shiftCopyPlacement(copy)
+
+    let newTree: Node | null = null
+    if (selectedId && selectedId !== tree.id) {
+      const parent = getParentOfNode(tree, selectedId)
+      if (!parent) return
+      if (!isPasteCompatible(copy, parent, tree.id)) return
+      newTree = insertNodeAfter(tree, selectedId, copy)
+    } else {
+      if (!isPasteCompatible(copy, tree, tree.id)) return
+      newTree = addNodeToParent(tree, tree.id, copy)
+    }
+    if (!newTree) return
+    set({
+      tree: newTree,
+      isDirty: true,
+      selectedId: copy.id,
       past: pushHistory(past, tree),
       future: [],
     })

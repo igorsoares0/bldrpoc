@@ -66,3 +66,31 @@ export function addNodeToParent(
   if (newChildren.every((c, i) => c === tree.children![i])) return tree
   return { ...tree, children: newChildren }
 }
+
+export function insertNodeAfter(
+  tree: Node,
+  siblingId: string,
+  newNode: Node,
+): Node {
+  if (!tree.children) return tree
+  const idx = tree.children.findIndex((c) => c.id === siblingId)
+  if (idx >= 0) {
+    const children = [...tree.children]
+    children.splice(idx + 1, 0, newNode)
+    return { ...tree, children }
+  }
+  const newChildren = tree.children.map((child) =>
+    insertNodeAfter(child, siblingId, newNode),
+  )
+  if (newChildren.every((c, i) => c === tree.children![i])) return tree
+  return { ...tree, children: newChildren }
+}
+
+export function cloneNodeWithNewIds(node: Node): Node {
+  return {
+    id: crypto.randomUUID(),
+    type: node.type,
+    props: JSON.parse(JSON.stringify(node.props)),
+    children: node.children?.map(cloneNodeWithNewIds),
+  }
+}

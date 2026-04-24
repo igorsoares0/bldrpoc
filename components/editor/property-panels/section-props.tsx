@@ -3,6 +3,10 @@
 import { useEditorStore } from '@/lib/store'
 import { Input } from '@/components/ui/input'
 import { DEFAULT_ROW_HEIGHT } from '@/lib/grid-utils'
+import {
+  ResponsiveColorField,
+  ResponsiveTextField,
+} from './responsive-fields'
 import type { Node } from '@/lib/types'
 
 const flexDirections = [
@@ -31,41 +35,68 @@ export function SectionProps({ node }: { node: Node }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-text-secondary">
-          Background Color
-        </label>
-        <div className="flex items-center gap-2">
-          <input
-            type="color"
-            value={node.props.backgroundColor || '#ffffff'}
-            onChange={(e) =>
-              updateNode(node.id, { backgroundColor: e.target.value })
-            }
-            className="h-9 w-9 rounded-lg border border-surface-3 bg-surface-2 p-1 cursor-pointer"
-          />
-          <Input
-            value={node.props.backgroundColor || '#ffffff'}
-            onChange={(e) =>
-              updateNode(node.id, { backgroundColor: e.target.value })
-            }
-            className="flex-1"
-          />
+      {isRoot ? (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-text-secondary">
+            Background Color
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={node.props.backgroundColor || '#ffffff'}
+              onChange={(e) =>
+                updateNode(node.id, { backgroundColor: e.target.value })
+              }
+              className="h-9 w-9 rounded-lg border border-surface-3 bg-surface-2 p-1 cursor-pointer"
+            />
+            <Input
+              value={node.props.backgroundColor || '#ffffff'}
+              onChange={(e) =>
+                updateNode(node.id, { backgroundColor: e.target.value })
+              }
+              className="flex-1"
+            />
+          </div>
         </div>
-      </div>
+      ) : (
+        <ResponsiveColorField
+          node={node}
+          propKey="backgroundColor"
+          label="Background Color"
+          fallback="#ffffff"
+        />
+      )}
 
-      <Input
-        label="Padding"
-        value={node.props.padding || '24px'}
-        onChange={(e) => updateNode(node.id, { padding: e.target.value })}
-      />
+      {isRoot ? (
+        <Input
+          label="Padding"
+          value={node.props.padding || '0px'}
+          onChange={(e) => updateNode(node.id, { padding: e.target.value })}
+        />
+      ) : (
+        <ResponsiveTextField
+          node={node}
+          propKey="padding"
+          label="Padding"
+          defaultValue="24px"
+        />
+      )}
 
-      <Input
-        label="Min Height"
-        value={node.props.minHeight || ''}
-        placeholder="e.g. 100vh"
-        onChange={(e) => updateNode(node.id, { minHeight: e.target.value })}
-      />
+      {isRoot ? (
+        <Input
+          label="Min Height"
+          value={node.props.minHeight || ''}
+          placeholder="e.g. 100vh"
+          onChange={(e) => updateNode(node.id, { minHeight: e.target.value })}
+        />
+      ) : (
+        <ResponsiveTextField
+          node={node}
+          propKey="minHeight"
+          label="Min Height"
+          placeholder="e.g. 100vh"
+        />
+      )}
 
       {isRoot ? (
         <>

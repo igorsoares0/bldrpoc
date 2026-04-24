@@ -1,14 +1,31 @@
 'use client'
 
-import { useState } from 'react'
-import type { Node } from '@/lib/types'
+import { createContext, useContext, useEffect, useState } from 'react'
+import type { Node, Viewport } from '@/lib/types'
 import {
   buildGridStyles,
   gridSectionClassName,
   isPlaceable,
+  MOBILE_BREAKPOINT_PX,
 } from '@/lib/grid-utils'
 import { MENU_SLOTS, partitionMenuChildren } from '@/lib/menu-utils'
+import { resolveProp } from '@/lib/prop-utils'
 import type { MenuSlot } from '@/lib/types'
+
+const ViewportContext = createContext<Viewport>('desktop')
+const useViewport = () => useContext(ViewportContext)
+
+function useDeviceViewport(): Viewport {
+  const [vp, setVp] = useState<Viewport>('desktop')
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX - 1}px)`)
+    const update = () => setVp(mq.matches ? 'mobile' : 'desktop')
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+  return vp
+}
 
 interface PreviewNodeProps {
   node: Node
@@ -85,14 +102,13 @@ function RootSectionNode({ node }: PreviewNodeProps) {
 }
 
 function SectionNode({ node, insideGrid }: PreviewNodeProps) {
-  const {
-    padding = '24px',
-    backgroundColor = '#ffffff',
-    minHeight,
-    borderRadius,
-    boxShadow,
-    border,
-  } = node.props
+  const viewport = useViewport()
+  const padding = resolveProp<string>(node, 'padding', viewport) ?? '24px'
+  const backgroundColor = resolveProp<string>(node, 'backgroundColor', viewport) ?? '#ffffff'
+  const minHeight = resolveProp<string>(node, 'minHeight', viewport)
+  const borderRadius = resolveProp<string>(node, 'borderRadius', viewport)
+  const boxShadow = resolveProp<string>(node, 'boxShadow', viewport)
+  const border = resolveProp<string>(node, 'border', viewport)
   return (
     <GridSectionWrapper
       node={node}
@@ -104,18 +120,17 @@ function SectionNode({ node, insideGrid }: PreviewNodeProps) {
 }
 
 function TextNode({ node }: PreviewNodeProps) {
-  const {
-    content = 'Text',
-    variant = 'p',
-    color = '#09090b',
-    fontSize = '16px',
-    fontWeight = '400',
-    textAlign = 'left',
-    lineHeight,
-    fontFamily,
-    fontStyle,
-    letterSpacing,
-  } = node.props
+  const viewport = useViewport()
+  const content = (node.props.content as string | undefined) ?? 'Text'
+  const variant = resolveProp<string>(node, 'variant', viewport) ?? 'p'
+  const color = resolveProp<string>(node, 'color', viewport) ?? '#09090b'
+  const fontSize = resolveProp<string>(node, 'fontSize', viewport) ?? '16px'
+  const fontWeight = resolveProp<string>(node, 'fontWeight', viewport) ?? '400'
+  const textAlign = (resolveProp<string>(node, 'textAlign', viewport) ?? 'left') as React.CSSProperties['textAlign']
+  const lineHeight = resolveProp<string>(node, 'lineHeight', viewport)
+  const fontFamily = resolveProp<string>(node, 'fontFamily', viewport)
+  const fontStyle = resolveProp<string>(node, 'fontStyle', viewport)
+  const letterSpacing = resolveProp<string>(node, 'letterSpacing', viewport)
 
   const Tag = variant as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p'
 
@@ -141,14 +156,13 @@ function TextNode({ node }: PreviewNodeProps) {
 }
 
 function ImageNode({ node }: PreviewNodeProps) {
-  const {
-    src = 'https://placehold.co/600x400/e2e8f0/94a3b8?text=Image',
-    alt = 'Image',
-    width = '100%',
-    height = '100%',
-    borderRadius = '0px',
-    objectFit = 'cover',
-  } = node.props
+  const viewport = useViewport()
+  const src = (node.props.src as string | undefined) ?? 'https://placehold.co/600x400/e2e8f0/94a3b8?text=Image'
+  const alt = (node.props.alt as string | undefined) ?? 'Image'
+  const width = resolveProp<string>(node, 'width', viewport) ?? '100%'
+  const height = resolveProp<string>(node, 'height', viewport) ?? '100%'
+  const borderRadius = resolveProp<string>(node, 'borderRadius', viewport) ?? '0px'
+  const objectFit = (resolveProp<string>(node, 'objectFit', viewport) ?? 'cover') as React.CSSProperties['objectFit']
 
   return (
     <img
@@ -167,20 +181,19 @@ function ImageNode({ node }: PreviewNodeProps) {
 }
 
 function ButtonNode({ node }: PreviewNodeProps) {
-  const {
-    label = 'Button',
-    backgroundColor = '#3b82f6',
-    color = '#ffffff',
-    borderRadius = '8px',
-    paddingX = '24px',
-    paddingY = '12px',
-    fontSize = '16px',
-    fontWeight = '600',
-    border = 'none',
-    fontFamily,
-    fontStyle,
-    letterSpacing,
-  } = node.props
+  const viewport = useViewport()
+  const label = (node.props.label as string | undefined) ?? 'Button'
+  const backgroundColor = resolveProp<string>(node, 'backgroundColor', viewport) ?? '#3b82f6'
+  const color = resolveProp<string>(node, 'color', viewport) ?? '#ffffff'
+  const borderRadius = resolveProp<string>(node, 'borderRadius', viewport) ?? '8px'
+  const paddingX = resolveProp<string>(node, 'paddingX', viewport) ?? '24px'
+  const paddingY = resolveProp<string>(node, 'paddingY', viewport) ?? '12px'
+  const fontSize = resolveProp<string>(node, 'fontSize', viewport) ?? '16px'
+  const fontWeight = resolveProp<string>(node, 'fontWeight', viewport) ?? '600'
+  const border = resolveProp<string>(node, 'border', viewport) ?? 'none'
+  const fontFamily = resolveProp<string>(node, 'fontFamily', viewport)
+  const fontStyle = resolveProp<string>(node, 'fontStyle', viewport)
+  const letterSpacing = resolveProp<string>(node, 'letterSpacing', viewport)
 
   return (
     <button
@@ -207,25 +220,24 @@ function ButtonNode({ node }: PreviewNodeProps) {
 }
 
 function FormNode({ node }: PreviewNodeProps) {
-  const {
-    placeholder = 'your@email.com',
-    buttonLabel = 'Subscribe',
-    backgroundColor = '#ffffff',
-    borderColor = '#e4e4e7',
-    borderRadius = '8px',
-    inputColor = '#09090b',
-    buttonBackgroundColor = '#3b82f6',
-    buttonColor = '#ffffff',
-    fontSize = '14px',
-    paddingX = '14px',
-    paddingY = '10px',
-    gap = '8px',
-    successMessage = 'Thanks! Check your inbox.',
-    action,
-    fontFamily,
-    fontStyle,
-    letterSpacing,
-  } = node.props
+  const viewport = useViewport()
+  const placeholder = (node.props.placeholder as string | undefined) ?? 'your@email.com'
+  const buttonLabel = (node.props.buttonLabel as string | undefined) ?? 'Subscribe'
+  const successMessage = (node.props.successMessage as string | undefined) ?? 'Thanks! Check your inbox.'
+  const action = node.props.action as string | undefined
+  const backgroundColor = resolveProp<string>(node, 'backgroundColor', viewport) ?? '#ffffff'
+  const borderColor = resolveProp<string>(node, 'borderColor', viewport) ?? '#e4e4e7'
+  const borderRadius = resolveProp<string>(node, 'borderRadius', viewport) ?? '8px'
+  const inputColor = resolveProp<string>(node, 'inputColor', viewport) ?? '#09090b'
+  const buttonBackgroundColor = resolveProp<string>(node, 'buttonBackgroundColor', viewport) ?? '#3b82f6'
+  const buttonColor = resolveProp<string>(node, 'buttonColor', viewport) ?? '#ffffff'
+  const fontSize = resolveProp<string>(node, 'fontSize', viewport) ?? '14px'
+  const paddingX = resolveProp<string>(node, 'paddingX', viewport) ?? '14px'
+  const paddingY = resolveProp<string>(node, 'paddingY', viewport) ?? '10px'
+  const gap = resolveProp<string>(node, 'gap', viewport) ?? '8px'
+  const fontFamily = resolveProp<string>(node, 'fontFamily', viewport)
+  const fontStyle = resolveProp<string>(node, 'fontStyle', viewport)
+  const letterSpacing = resolveProp<string>(node, 'letterSpacing', viewport)
 
   const typographyStyle = {
     fontFamily: fontFamily || 'system-ui, sans-serif',
@@ -329,7 +341,10 @@ function FormNode({ node }: PreviewNodeProps) {
 }
 
 function MenuBarNode({ node }: PreviewNodeProps) {
-  const { backgroundColor = '#09090b', padding = '16px 32px', minHeight } = node.props
+  const viewport = useViewport()
+  const backgroundColor = resolveProp<string>(node, 'backgroundColor', viewport) ?? '#09090b'
+  const padding = resolveProp<string>(node, 'padding', viewport) ?? '16px 32px'
+  const minHeight = resolveProp<string>(node, 'minHeight', viewport)
   const partitioned = partitionMenuChildren(node)
   return (
     <nav
@@ -373,7 +388,10 @@ function PreviewMenuSlot({ slot, items }: { slot: MenuSlot; items: Node[] }) {
 }
 
 function FooterNode({ node, insideGrid }: PreviewNodeProps) {
-  const { backgroundColor = '#09090b', padding = '40px 24px', minHeight } = node.props
+  const viewport = useViewport()
+  const backgroundColor = resolveProp<string>(node, 'backgroundColor', viewport) ?? '#09090b'
+  const padding = resolveProp<string>(node, 'padding', viewport) ?? '40px 24px'
+  const minHeight = resolveProp<string>(node, 'minHeight', viewport)
   return (
     <GridSectionWrapper
       node={node}
@@ -409,15 +427,18 @@ function PreviewNode({ node, insideGrid, isRoot }: PreviewNodeProps) {
 }
 
 export function PreviewRenderer({ tree }: { tree: Node }) {
+  const viewport = useDeviceViewport()
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: '#ffffff',
-        fontFamily: 'system-ui, sans-serif',
-      }}
-    >
-      <PreviewNode node={tree} isRoot={true} />
-    </div>
+    <ViewportContext.Provider value={viewport}>
+      <div
+        style={{
+          minHeight: '100vh',
+          backgroundColor: '#ffffff',
+          fontFamily: 'system-ui, sans-serif',
+        }}
+      >
+        <PreviewNode node={tree} isRoot={true} />
+      </div>
+    </ViewportContext.Provider>
   )
 }

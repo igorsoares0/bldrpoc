@@ -1,8 +1,12 @@
 'use client'
 
 import { useEditorStore } from '@/lib/store'
-import { Input } from '@/components/ui/input'
+import { useResponsiveProp } from '@/lib/prop-utils'
 import { TypographyControls } from './typography-controls'
+import {
+  ResponsiveColorField,
+  ResponsiveSelectField,
+} from './responsive-fields'
 import type { Node } from '@/lib/types'
 
 const variants = [
@@ -27,6 +31,81 @@ const textAligns = [
   { value: 'right', label: 'Right' },
 ]
 
+function FontSizeField({ node }: { node: Node }) {
+  const fs = useResponsiveProp<string>(node, 'fontSize', '16px')
+  const num = parseFloat(String(fs.value ?? '16')) || 16
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-text-secondary">Font Size</label>
+        {fs.isOverride && (
+          <button
+            type="button"
+            onClick={fs.reset}
+            className="text-[10px] text-pink-400 hover:text-pink-300 hover:underline cursor-pointer"
+            title="Remove mobile override"
+          >
+            ↺ reset
+          </button>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          min={8}
+          max={200}
+          step={1}
+          value={num}
+          onChange={(e) => {
+            const n = parseFloat(e.target.value)
+            if (!Number.isFinite(n)) return
+            fs.setValue(`${Math.max(1, Math.round(n))}px`)
+          }}
+          className={`h-9 w-full rounded-lg border border-surface-3 bg-surface-2 px-3 text-sm text-text-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent ${
+            fs.isOverride ? 'ring-1 ring-pink-500/60' : ''
+          }`}
+        />
+        <span className="text-xs text-text-muted">px</span>
+      </div>
+    </div>
+  )
+}
+
+function TextAlignField({ node }: { node: Node }) {
+  const ta = useResponsiveProp<string>(node, 'textAlign', 'left')
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-text-secondary">Text Align</label>
+        {ta.isOverride && (
+          <button
+            type="button"
+            onClick={ta.reset}
+            className="text-[10px] text-pink-400 hover:text-pink-300 hover:underline cursor-pointer"
+          >
+            ↺ reset
+          </button>
+        )}
+      </div>
+      <div className={`flex gap-1 ${ta.isOverride ? 'rounded-lg ring-1 ring-pink-500/60 p-0.5' : ''}`}>
+        {textAligns.map((a) => (
+          <button
+            key={a.value}
+            onClick={() => ta.setValue(a.value)}
+            className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+              (ta.value ?? 'left') === a.value
+                ? 'bg-accent text-white'
+                : 'bg-surface-2 text-text-secondary hover:bg-surface-3'
+            }`}
+          >
+            {a.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function TextProps({ node }: { node: Node }) {
   const updateNode = useEditorStore((s) => s.updateNode)
 
@@ -44,103 +123,34 @@ export function TextProps({ node }: { node: Node }) {
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-text-secondary">
-          Variant
-        </label>
-        <select
-          value={node.props.variant || 'p'}
-          onChange={(e) => updateNode(node.id, { variant: e.target.value })}
-          className="h-9 w-full rounded-lg border border-surface-3 bg-surface-2 px-3 text-sm text-text-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
-        >
-          {variants.map((v) => (
-            <option key={v.value} value={v.value}>
-              {v.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      <ResponsiveSelectField
+        node={node}
+        propKey="variant"
+        label="Variant"
+        defaultValue="p"
+        options={variants}
+      />
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-text-secondary">
-          Font Size
-        </label>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            min={8}
-            max={200}
-            step={1}
-            value={parseFloat(String(node.props.fontSize ?? '16')) || 16}
-            onChange={(e) => {
-              const n = parseFloat(e.target.value)
-              if (!Number.isFinite(n)) return
-              updateNode(node.id, { fontSize: `${Math.max(1, Math.round(n))}px` })
-            }}
-            className="h-9 w-full rounded-lg border border-surface-3 bg-surface-2 px-3 text-sm text-text-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-          />
-          <span className="text-xs text-text-muted">px</span>
-        </div>
-      </div>
+      <FontSizeField node={node} />
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-text-secondary">
-          Font Weight
-        </label>
-        <select
-          value={node.props.fontWeight || '400'}
-          onChange={(e) => updateNode(node.id, { fontWeight: e.target.value })}
-          className="h-9 w-full rounded-lg border border-surface-3 bg-surface-2 px-3 text-sm text-text-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
-        >
-          {fontWeights.map((w) => (
-            <option key={w.value} value={w.value}>
-              {w.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      <ResponsiveSelectField
+        node={node}
+        propKey="fontWeight"
+        label="Font Weight"
+        defaultValue="400"
+        options={fontWeights}
+      />
 
       <TypographyControls node={node} />
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-text-secondary">
-          Text Align
-        </label>
-        <div className="flex gap-1">
-          {textAligns.map((a) => (
-            <button
-              key={a.value}
-              onClick={() => updateNode(node.id, { textAlign: a.value })}
-              className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
-                (node.props.textAlign || 'left') === a.value
-                  ? 'bg-accent text-white'
-                  : 'bg-surface-2 text-text-secondary hover:bg-surface-3'
-              }`}
-            >
-              {a.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <TextAlignField node={node} />
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-text-secondary">
-          Color
-        </label>
-        <div className="flex items-center gap-2">
-          <input
-            type="color"
-            value={node.props.color || '#09090b'}
-            onChange={(e) => updateNode(node.id, { color: e.target.value })}
-            className="h-9 w-9 rounded-lg border border-surface-3 bg-surface-2 p-1 cursor-pointer"
-          />
-          <Input
-            value={node.props.color || '#09090b'}
-            onChange={(e) => updateNode(node.id, { color: e.target.value })}
-            className="flex-1"
-          />
-        </div>
-      </div>
+      <ResponsiveColorField
+        node={node}
+        propKey="color"
+        label="Color"
+        fallback="#09090b"
+      />
     </div>
   )
 }

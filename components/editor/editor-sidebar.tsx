@@ -74,9 +74,26 @@ export function EditorSidebar() {
           </button>
         )}
       </div>
+      <ViewportBanner />
       <div className="flex-1 overflow-y-auto p-4">
         {PropsPanel && <PropsPanel node={selectedNode} />}
       </div>
+    </div>
+  )
+}
+
+function ViewportBanner() {
+  const viewport = useEditorStore((s) => s.viewport)
+  if (viewport === 'desktop') {
+    return (
+      <div className="border-b border-surface-3 px-4 py-2 text-[11px] text-text-muted">
+        Editing <span className="font-medium text-text-secondary">DESKTOP</span> — base values
+      </div>
+    )
+  }
+  return (
+    <div className="border-b border-surface-3 bg-pink-500/10 px-4 py-2 text-[11px] text-pink-400">
+      Editing <span className="font-medium">MOBILE</span> — overrides desktop
     </div>
   )
 }

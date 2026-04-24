@@ -3,38 +3,11 @@
 import { useEditorStore } from '@/lib/store'
 import { Input } from '@/components/ui/input'
 import { TypographyControls } from './typography-controls'
+import {
+  ResponsiveColorField,
+  ResponsiveTextField,
+} from './responsive-fields'
 import type { Node } from '@/lib/types'
-
-function ColorField({
-  label,
-  value,
-  fallback,
-  onChange,
-}: {
-  label: string
-  value: string | undefined
-  fallback: string
-  onChange: (v: string) => void
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium text-text-secondary">{label}</label>
-      <div className="flex items-center gap-2">
-        <input
-          type="color"
-          value={value || fallback}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-9 w-9 rounded-lg border border-surface-3 bg-surface-2 p-1 cursor-pointer"
-        />
-        <Input
-          value={value || fallback}
-          onChange={(e) => onChange(e.target.value)}
-          className="flex-1"
-        />
-      </div>
-    </div>
-  )
-}
 
 export function FormProps({ node }: { node: Node }) {
   const updateNode = useEditorStore((s) => s.updateNode)
@@ -65,67 +38,22 @@ export function FormProps({ node }: { node: Node }) {
 
       <div className="h-px bg-surface-3" />
 
-      <ColorField
-        label="Input Background"
-        value={node.props.backgroundColor}
-        fallback="#ffffff"
-        onChange={(v) => updateNode(node.id, { backgroundColor: v })}
-      />
-      <ColorField
-        label="Input Border"
-        value={node.props.borderColor}
-        fallback="#e4e4e7"
-        onChange={(v) => updateNode(node.id, { borderColor: v })}
-      />
-      <ColorField
-        label="Input Text"
-        value={node.props.inputColor}
-        fallback="#09090b"
-        onChange={(v) => updateNode(node.id, { inputColor: v })}
-      />
-      <ColorField
-        label="Button Background"
-        value={node.props.buttonBackgroundColor}
-        fallback="#3b82f6"
-        onChange={(v) => updateNode(node.id, { buttonBackgroundColor: v })}
-      />
-      <ColorField
-        label="Button Text"
-        value={node.props.buttonColor}
-        fallback="#ffffff"
-        onChange={(v) => updateNode(node.id, { buttonColor: v })}
-      />
+      <ResponsiveColorField node={node} propKey="backgroundColor" label="Input Background" fallback="#ffffff" />
+      <ResponsiveColorField node={node} propKey="borderColor" label="Input Border" fallback="#e4e4e7" />
+      <ResponsiveColorField node={node} propKey="inputColor" label="Input Text" fallback="#09090b" />
+      <ResponsiveColorField node={node} propKey="buttonBackgroundColor" label="Button Background" fallback="#3b82f6" />
+      <ResponsiveColorField node={node} propKey="buttonColor" label="Button Text" fallback="#ffffff" />
 
-      <Input
-        label="Border Radius"
-        value={node.props.borderRadius ?? '8px'}
-        onChange={(e) => updateNode(node.id, { borderRadius: e.target.value })}
-      />
+      <ResponsiveTextField node={node} propKey="borderRadius" label="Border Radius" defaultValue="8px" />
 
       <div className="grid grid-cols-2 gap-3">
-        <Input
-          label="Padding X"
-          value={node.props.paddingX ?? '14px'}
-          onChange={(e) => updateNode(node.id, { paddingX: e.target.value })}
-        />
-        <Input
-          label="Padding Y"
-          value={node.props.paddingY ?? '10px'}
-          onChange={(e) => updateNode(node.id, { paddingY: e.target.value })}
-        />
+        <ResponsiveTextField node={node} propKey="paddingX" label="Padding X" defaultValue="14px" />
+        <ResponsiveTextField node={node} propKey="paddingY" label="Padding Y" defaultValue="10px" />
       </div>
 
-      <Input
-        label="Gap"
-        value={node.props.gap ?? '8px'}
-        onChange={(e) => updateNode(node.id, { gap: e.target.value })}
-      />
+      <ResponsiveTextField node={node} propKey="gap" label="Gap" defaultValue="8px" />
 
-      <Input
-        label="Font Size"
-        value={node.props.fontSize ?? '14px'}
-        onChange={(e) => updateNode(node.id, { fontSize: e.target.value })}
-      />
+      <ResponsiveTextField node={node} propKey="fontSize" label="Font Size" defaultValue="14px" />
 
       <TypographyControls node={node} />
     </div>

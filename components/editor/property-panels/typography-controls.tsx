@@ -1,31 +1,53 @@
 'use client'
 
-import { useEditorStore } from '@/lib/store'
 import { FONT_FAMILIES, fontSupportsItalic } from '@/lib/fonts'
+import { useResponsiveProp } from '@/lib/prop-utils'
 import type { Node } from '@/lib/types'
 
+const overrideRing = 'ring-1 ring-pink-500/60'
+
+function ResetButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="text-[10px] text-pink-400 hover:text-pink-300 hover:underline cursor-pointer"
+      title="Remove mobile override"
+    >
+      ↺ reset
+    </button>
+  )
+}
+
 export function TypographyControls({ node }: { node: Node }) {
-  const updateNode = useEditorStore((s) => s.updateNode)
-  const family = node.props.fontFamily as string | undefined
-  const style = (node.props.fontStyle as string | undefined) ?? 'normal'
-  const spacingRaw = String(node.props.letterSpacing ?? '0').replace('em', '')
-  const spacing = parseFloat(spacingRaw) || 0
+  const family = useResponsiveProp<string>(node, 'fontFamily', '')
+  const style = useResponsiveProp<string>(node, 'fontStyle', 'normal')
+  const spacing = useResponsiveProp<string>(node, 'letterSpacing', '0')
+
+  const familyValue = family.value ?? ''
+  const styleValue = style.value ?? 'normal'
+  const spacingNum = parseFloat(String(spacing.value ?? '0').replace('em', '')) || 0
+
+  function setFamily(next: string) {
+    family.setValue(next)
+    if (!fontSupportsItalic(next) && styleValue === 'italic') {
+      style.setValue('normal')
+    }
+  }
 
   return (
     <>
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-text-secondary">Font Family</label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-text-secondary">Font Family</label>
+          {family.isOverride && <ResetButton onClick={family.reset} />}
+        </div>
         <select
-          value={family ?? ''}
-          onChange={(e) => {
-            const next = e.target.value
-            const update: Record<string, unknown> = { fontFamily: next || undefined }
-            if (!fontSupportsItalic(next) && style === 'italic') {
-              update.fontStyle = 'normal'
-            }
-            updateNode(node.id, update)
-          }}
-          className="h-9 w-full rounded-lg border border-surface-3 bg-surface-2 px-3 text-sm text-text-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
+          value={familyValue}
+          onChange={(e) => setFamily(e.target.value)}
+          className={`h-9 w-full rounded-lg border border-surface-3 bg-surface-2 px-3 text-sm text-text-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer ${
+            family.isOverride ? overrideRing : ''
+          }`}
         >
           {FONT_FAMILIES.map((f) => (
             <option key={f.label} value={f.value}>
@@ -36,18 +58,19 @@ export function TypographyControls({ node }: { node: Node }) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-text-secondary">Font Style</label>
-        <div className="flex gap-1">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-text-secondary">Font Style</label>
+          {style.isOverride && <ResetButton onClick={style.reset} />}
+        </div>
+        <div className={`flex gap-1 ${style.isOverride ? `rounded-lg ${overrideRing} p-0.5` : ''}`}>
           {(['normal', 'italic'] as const).map((s) => {
-            const disabled = s === 'italic' && !fontSupportsItalic(family)
-            const active = style === s
+            const disabled = s === 'italic' && !fontSupportsItalic(familyValue)
+            const active = styleValue === s
             return (
               <button
                 key={s}
                 disabled={disabled}
-                onClick={() =>
-                  updateNode(node.id, { fontStyle: s === 'normal' ? undefined : s })
-                }
+                onClick={() => style.setValue(s)}
                 className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                   disabled
                     ? 'bg-surface-2 text-text-muted cursor-not-allowed opacity-50'
@@ -65,22 +88,25 @@ export function TypographyControls({ node }: { node: Node }) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-text-secondary">Letter Spacing</label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-text-secondary">Letter Spacing</label>
+          {spacing.isOverride && <ResetButton onClick={spacing.reset} />}
+        </div>
         <div className="flex items-center gap-2">
           <input
             type="number"
             step={0.01}
             min={-0.2}
             max={1}
-            value={spacing}
+            value={spacingNum}
             onChange={(e) => {
               const n = parseFloat(e.target.value)
               if (!Number.isFinite(n)) return
-              updateNode(node.id, {
-                letterSpacing: n === 0 ? undefined : `${n}em`,
-              })
+              spacing.setValue(n === 0 ? '' : `${n}em`)
             }}
-            className="h-9 w-full rounded-lg border border-surface-3 bg-surface-2 px-3 text-sm text-text-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            className={`h-9 w-full rounded-lg border border-surface-3 bg-surface-2 px-3 text-sm text-text-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent ${
+              spacing.isOverride ? overrideRing : ''
+            }`}
           />
           <span className="text-xs text-text-muted">em</span>
         </div>

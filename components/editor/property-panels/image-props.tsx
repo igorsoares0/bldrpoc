@@ -2,7 +2,18 @@
 
 import { useEditorStore } from '@/lib/store'
 import { Input } from '@/components/ui/input'
+import {
+  ResponsiveSelectField,
+  ResponsiveTextField,
+} from './responsive-fields'
 import type { Node } from '@/lib/types'
+
+const objectFits = [
+  { value: 'cover', label: 'Cover' },
+  { value: 'contain', label: 'Contain' },
+  { value: 'fill', label: 'Fill' },
+  { value: 'none', label: 'None' },
+]
 
 export function ImageProps({ node }: { node: Node }) {
   const updateNode = useEditorStore((s) => s.updateNode)
@@ -23,39 +34,34 @@ export function ImageProps({ node }: { node: Node }) {
         onChange={(e) => updateNode(node.id, { alt: e.target.value })}
       />
 
-      <Input
+      <ResponsiveTextField
+        node={node}
+        propKey="width"
         label="Width"
-        value={node.props.width || '100%'}
-        onChange={(e) => updateNode(node.id, { width: e.target.value })}
+        defaultValue="100%"
       />
 
-      <Input
+      <ResponsiveTextField
+        node={node}
+        propKey="height"
         label="Height"
-        value={node.props.height || 'auto'}
-        onChange={(e) => updateNode(node.id, { height: e.target.value })}
+        defaultValue="auto"
       />
 
-      <Input
+      <ResponsiveTextField
+        node={node}
+        propKey="borderRadius"
         label="Border Radius"
-        value={node.props.borderRadius || '0px'}
-        onChange={(e) => updateNode(node.id, { borderRadius: e.target.value })}
+        defaultValue="0px"
       />
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-text-secondary">
-          Object Fit
-        </label>
-        <select
-          value={node.props.objectFit || 'cover'}
-          onChange={(e) => updateNode(node.id, { objectFit: e.target.value })}
-          className="h-9 w-full rounded-lg border border-surface-3 bg-surface-2 px-3 text-sm text-text-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
-        >
-          <option value="cover">Cover</option>
-          <option value="contain">Contain</option>
-          <option value="fill">Fill</option>
-          <option value="none">None</option>
-        </select>
-      </div>
+      <ResponsiveSelectField
+        node={node}
+        propKey="objectFit"
+        label="Object Fit"
+        defaultValue="cover"
+        options={objectFits}
+      />
     </div>
   )
 }

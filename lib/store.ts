@@ -17,6 +17,8 @@ import {
   defaultMobilePlacement,
   migrateTreeToGrid,
   DEFAULT_ROW_HEIGHT,
+  GRID_COLS_DESKTOP,
+  GRID_COLS_MOBILE,
   type SnapGuides,
 } from './grid-utils'
 import { MENU_SLOTS, getMenuSlot } from './menu-utils'
@@ -78,6 +80,7 @@ type EditorState = {
   duplicateNode: (id: string) => void
   copyNode: (id: string) => void
   pasteNode: () => void
+  nudgeSelected: (direction: 'up' | 'down' | 'left' | 'right', big: boolean) => void
   placeNodeInGrid: (
     sectionId: string,
     draggedId: string,
@@ -317,6 +320,45 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       tree: newTree,
       isDirty: true,
       selectedId: copy.id,
+      past: pushHistory(past, tree),
+      future: [],
+    })
+  },
+
+  nudgeSelected: (direction, big) => {
+    const { selectedId, tree, viewport, past } = get()
+    if (!selectedId || selectedId === tree.id) return
+    const node = getNodeById(tree, selectedId)
+    if (!node) return
+    const grid = node.props.grid as GridProps | undefined
+    if (!grid) return
+    const placement = viewport === 'desktop' ? grid.desktop : grid.mobile
+    if (!placement) return
+
+    const colStep = big ? 4 : 1
+    const rowStep = big ? 4 : 1
+    let { col, row, colSpan, rowSpan } = placement
+    if (direction === 'up') row -= rowStep
+    if (direction === 'down') row += rowStep
+    if (direction === 'left') col -= colStep
+    if (direction === 'right') col += colStep
+
+    const cols = viewport === 'desktop' ? GRID_COLS_DESKTOP : GRID_COLS_MOBILE
+    col = Math.max(1, Math.min(col, cols - colSpan + 1))
+    row = Math.max(1, row)
+
+    const newPlacement = { col, row, colSpan, rowSpan }
+    const nextGrid: GridProps =
+      viewport === 'desktop'
+        ? { ...grid, desktop: newPlacement }
+        : { ...grid, mobile: newPlacement }
+    const newTree = updateNodeById(tree, selectedId, (n) => ({
+      ...n,
+      props: { ...n.props, grid: nextGrid },
+    }))
+    set({
+      tree: newTree,
+      isDirty: true,
       past: pushHistory(past, tree),
       future: [],
     })

@@ -84,6 +84,26 @@ export function EditorShell({ initialPage }: EditorShellProps) {
         e.preventDefault()
         useEditorStore.getState().pasteNode()
       }
+      if (
+        selectedId &&
+        !targetIsFormElement &&
+        !(e.metaKey || e.ctrlKey) &&
+        (e.key === 'ArrowUp' ||
+          e.key === 'ArrowDown' ||
+          e.key === 'ArrowLeft' ||
+          e.key === 'ArrowRight')
+      ) {
+        const dir =
+          e.key === 'ArrowUp'
+            ? 'up'
+            : e.key === 'ArrowDown'
+              ? 'down'
+              : e.key === 'ArrowLeft'
+                ? 'left'
+                : 'right'
+        e.preventDefault()
+        useEditorStore.getState().nudgeSelected(dir, e.shiftKey)
+      }
     }
 
     document.addEventListener('keydown', handleKeyDown)

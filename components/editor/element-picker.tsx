@@ -14,6 +14,11 @@ import {
   LayoutGrid,
   Mail,
   Tag,
+  Megaphone,
+  Building2,
+  Quote,
+  HelpCircle,
+  BarChart3,
 } from 'lucide-react'
 import { useEditorStore } from '@/lib/store'
 import type { GridPlacement, Node, NodeType } from '@/lib/types'
@@ -30,11 +35,20 @@ function uid() {
   return crypto.randomUUID()
 }
 
-function grid(
+function tripleRows(p: GridPlacement): GridPlacement {
+  return {
+    col: p.col,
+    colSpan: p.colSpan,
+    row: (p.row - 1) * 3 + 1,
+    rowSpan: p.rowSpan * 3,
+  }
+}
+
+function gridFine(
   desktop: GridPlacement,
   mobile: GridPlacement,
 ): { grid: { desktop: GridPlacement; mobile: GridPlacement } } {
-  return { grid: { desktop, mobile } }
+  return { grid: { desktop: tripleRows(desktop), mobile: tripleRows(mobile) } }
 }
 
 const elements: ElementDef[] = [
@@ -50,7 +64,6 @@ const elements: ElementDef[] = [
       props: {
         padding: '24px',
         backgroundColor: '#f4f4f5',
-        rowHeight: 24,
         minHeight: '160px',
       },
       children: [],
@@ -145,7 +158,7 @@ const elements: ElementDef[] = [
     createNode: () => ({
       id: uid(),
       type: 'menu-bar',
-      props: { backgroundColor: '#09090b', padding: '16px 32px', rowHeight: 24 },
+      props: { backgroundColor: '#09090b', padding: '16px 32px' },
       children: [
         {
           id: uid(),
@@ -157,7 +170,7 @@ const elements: ElementDef[] = [
             fontSize: '20px',
             fontWeight: '700',
             textAlign: 'left',
-            ...grid(
+            ...gridFine(
               { col: 1, row: 1, colSpan: 5, rowSpan: 2 },
               { col: 1, row: 1, colSpan: 4, rowSpan: 2 },
             ),
@@ -173,7 +186,7 @@ const elements: ElementDef[] = [
             fontSize: '14px',
             fontWeight: '500',
             textAlign: 'center',
-            ...grid(
+            ...gridFine(
               { col: 13, row: 1, colSpan: 2, rowSpan: 2 },
               { col: 1, row: 3, colSpan: 2, rowSpan: 2 },
             ),
@@ -189,7 +202,7 @@ const elements: ElementDef[] = [
             fontSize: '14px',
             fontWeight: '500',
             textAlign: 'center',
-            ...grid(
+            ...gridFine(
               { col: 15, row: 1, colSpan: 2, rowSpan: 2 },
               { col: 3, row: 3, colSpan: 2, rowSpan: 2 },
             ),
@@ -205,7 +218,7 @@ const elements: ElementDef[] = [
             fontSize: '14px',
             fontWeight: '500',
             textAlign: 'center',
-            ...grid(
+            ...gridFine(
               { col: 17, row: 1, colSpan: 3, rowSpan: 2 },
               { col: 5, row: 3, colSpan: 2, rowSpan: 2 },
             ),
@@ -221,7 +234,7 @@ const elements: ElementDef[] = [
             fontSize: '14px',
             fontWeight: '500',
             textAlign: 'center',
-            ...grid(
+            ...gridFine(
               { col: 20, row: 1, colSpan: 2, rowSpan: 2 },
               { col: 7, row: 3, colSpan: 2, rowSpan: 2 },
             ),
@@ -239,7 +252,7 @@ const elements: ElementDef[] = [
             paddingY: '8px',
             fontSize: '14px',
             fontWeight: '600',
-            ...grid(
+            ...gridFine(
               { col: 22, row: 1, colSpan: 3, rowSpan: 2 },
               { col: 1, row: 5, colSpan: 8, rowSpan: 2 },
             ),
@@ -259,7 +272,6 @@ const elements: ElementDef[] = [
       props: {
         padding: '80px 24px',
         backgroundColor: '#ffffff',
-        rowHeight: 24,
         minHeight: '80vh',
       },
       children: [
@@ -273,7 +285,7 @@ const elements: ElementDef[] = [
             fontSize: '48px',
             fontWeight: '700',
             textAlign: 'center',
-            ...grid(
+            ...gridFine(
               { col: 4, row: 4, colSpan: 18, rowSpan: 4 },
               { col: 1, row: 3, colSpan: 8, rowSpan: 5 },
             ),
@@ -290,7 +302,7 @@ const elements: ElementDef[] = [
             fontSize: '18px',
             fontWeight: '400',
             textAlign: 'center',
-            ...grid(
+            ...gridFine(
               { col: 6, row: 9, colSpan: 14, rowSpan: 3 },
               { col: 1, row: 9, colSpan: 8, rowSpan: 3 },
             ),
@@ -308,7 +320,7 @@ const elements: ElementDef[] = [
             paddingY: '14px',
             fontSize: '16px',
             fontWeight: '600',
-            ...grid(
+            ...gridFine(
               { col: 11, row: 13, colSpan: 4, rowSpan: 3 },
               { col: 2, row: 13, colSpan: 6, rowSpan: 3 },
             ),
@@ -328,7 +340,6 @@ const elements: ElementDef[] = [
       props: {
         padding: '64px 48px',
         backgroundColor: '#ffffff',
-        rowHeight: 24,
         minHeight: '80vh',
       },
       children: [
@@ -342,7 +353,7 @@ const elements: ElementDef[] = [
             fontSize: '44px',
             fontWeight: '700',
             textAlign: 'left',
-            ...grid(
+            ...gridFine(
               { col: 1, row: 3, colSpan: 11, rowSpan: 4 },
               { col: 1, row: 11, colSpan: 8, rowSpan: 4 },
             ),
@@ -360,7 +371,7 @@ const elements: ElementDef[] = [
             fontWeight: '400',
             textAlign: 'left',
             lineHeight: '1.7',
-            ...grid(
+            ...gridFine(
               { col: 1, row: 8, colSpan: 11, rowSpan: 4 },
               { col: 1, row: 16, colSpan: 8, rowSpan: 4 },
             ),
@@ -378,7 +389,7 @@ const elements: ElementDef[] = [
             paddingY: '14px',
             fontSize: '16px',
             fontWeight: '600',
-            ...grid(
+            ...gridFine(
               { col: 1, row: 13, colSpan: 5, rowSpan: 3 },
               { col: 1, row: 21, colSpan: 6, rowSpan: 3 },
             ),
@@ -394,7 +405,7 @@ const elements: ElementDef[] = [
             height: '100%',
             borderRadius: '12px',
             objectFit: 'cover',
-            ...grid(
+            ...gridFine(
               { col: 13, row: 1, colSpan: 12, rowSpan: 16 },
               { col: 1, row: 1, colSpan: 8, rowSpan: 9 },
             ),
@@ -414,7 +425,6 @@ const elements: ElementDef[] = [
       props: {
         padding: '80px 32px',
         backgroundColor: '#fafafa',
-        rowHeight: 24,
         minHeight: '600px',
       },
       children: [
@@ -428,7 +438,7 @@ const elements: ElementDef[] = [
             fontSize: '36px',
             fontWeight: '700',
             textAlign: 'center',
-            ...grid(
+            ...gridFine(
               { col: 4, row: 3, colSpan: 18, rowSpan: 3 },
               { col: 1, row: 1, colSpan: 8, rowSpan: 4 },
             ),
@@ -444,7 +454,7 @@ const elements: ElementDef[] = [
             fontSize: '16px',
             fontWeight: '400',
             textAlign: 'center',
-            ...grid(
+            ...gridFine(
               { col: 6, row: 7, colSpan: 14, rowSpan: 2 },
               { col: 1, row: 6, colSpan: 8, rowSpan: 3 },
             ),
@@ -460,7 +470,7 @@ const elements: ElementDef[] = [
             height: '64px',
             borderRadius: '14px',
             objectFit: 'cover',
-            ...grid(
+            ...gridFine(
               { col: 4, row: 13, colSpan: 2, rowSpan: 3 },
               { col: 4, row: 11, colSpan: 2, rowSpan: 3 },
             ),
@@ -476,7 +486,7 @@ const elements: ElementDef[] = [
             fontSize: '20px',
             fontWeight: '600',
             textAlign: 'center',
-            ...grid(
+            ...gridFine(
               { col: 1, row: 17, colSpan: 8, rowSpan: 2 },
               { col: 1, row: 15, colSpan: 8, rowSpan: 2 },
             ),
@@ -493,7 +503,7 @@ const elements: ElementDef[] = [
             fontWeight: '400',
             textAlign: 'center',
             lineHeight: '1.6',
-            ...grid(
+            ...gridFine(
               { col: 1, row: 19, colSpan: 8, rowSpan: 4 },
               { col: 1, row: 17, colSpan: 8, rowSpan: 4 },
             ),
@@ -509,7 +519,7 @@ const elements: ElementDef[] = [
             height: '64px',
             borderRadius: '14px',
             objectFit: 'cover',
-            ...grid(
+            ...gridFine(
               { col: 12, row: 13, colSpan: 2, rowSpan: 3 },
               { col: 4, row: 24, colSpan: 2, rowSpan: 3 },
             ),
@@ -525,7 +535,7 @@ const elements: ElementDef[] = [
             fontSize: '20px',
             fontWeight: '600',
             textAlign: 'center',
-            ...grid(
+            ...gridFine(
               { col: 9, row: 17, colSpan: 8, rowSpan: 2 },
               { col: 1, row: 28, colSpan: 8, rowSpan: 2 },
             ),
@@ -542,7 +552,7 @@ const elements: ElementDef[] = [
             fontWeight: '400',
             textAlign: 'center',
             lineHeight: '1.6',
-            ...grid(
+            ...gridFine(
               { col: 9, row: 19, colSpan: 8, rowSpan: 4 },
               { col: 1, row: 30, colSpan: 8, rowSpan: 4 },
             ),
@@ -558,7 +568,7 @@ const elements: ElementDef[] = [
             height: '64px',
             borderRadius: '14px',
             objectFit: 'cover',
-            ...grid(
+            ...gridFine(
               { col: 20, row: 13, colSpan: 2, rowSpan: 3 },
               { col: 4, row: 37, colSpan: 2, rowSpan: 3 },
             ),
@@ -574,7 +584,7 @@ const elements: ElementDef[] = [
             fontSize: '20px',
             fontWeight: '600',
             textAlign: 'center',
-            ...grid(
+            ...gridFine(
               { col: 17, row: 17, colSpan: 8, rowSpan: 2 },
               { col: 1, row: 41, colSpan: 8, rowSpan: 2 },
             ),
@@ -591,7 +601,7 @@ const elements: ElementDef[] = [
             fontWeight: '400',
             textAlign: 'center',
             lineHeight: '1.6',
-            ...grid(
+            ...gridFine(
               { col: 17, row: 19, colSpan: 8, rowSpan: 4 },
               { col: 1, row: 43, colSpan: 8, rowSpan: 4 },
             ),
@@ -616,7 +626,7 @@ const elements: ElementDef[] = [
           fontSize: '14px',
           fontWeight: '500',
           textAlign: 'left',
-          ...grid(
+          ...gridFine(
             { col: 3, row: rowDesktop, colSpan: 20, rowSpan: 2 },
             { col: 1, row: rowMobile, colSpan: 8, rowSpan: 2 },
           ),
@@ -644,7 +654,7 @@ const elements: ElementDef[] = [
                   fontSize: '11px',
                   fontWeight: '700',
                   textAlign: 'center',
-                  ...grid(
+                  ...gridFine(
                     { col: 1, row: 1, colSpan: 24, rowSpan: 1 },
                     { col: 1, row: 1, colSpan: 8, rowSpan: 1 },
                   ),
@@ -659,13 +669,12 @@ const elements: ElementDef[] = [
           props: {
             padding: '32px 24px',
             backgroundColor: '#ffffff',
-            rowHeight: 24,
             borderRadius: '14px',
             border: highlighted ? '2px solid #3b82f6' : '1px solid #e4e4e7',
             boxShadow: highlighted
               ? '0 18px 40px -12px rgba(59,130,246,0.4)'
               : '0 1px 2px rgba(0,0,0,0.04)',
-            ...grid(cardDesktop, cardMobile),
+            ...gridFine(cardDesktop, cardMobile),
           },
           children: [
             ...badge,
@@ -679,7 +688,7 @@ const elements: ElementDef[] = [
                 fontSize: '20px',
                 fontWeight: '700',
                 textAlign: 'center',
-                ...grid(
+                ...gridFine(
                   { col: 1, row: 2, colSpan: 24, rowSpan: 2 },
                   { col: 1, row: 2, colSpan: 8, rowSpan: 2 },
                 ),
@@ -695,7 +704,7 @@ const elements: ElementDef[] = [
                 fontSize: '44px',
                 fontWeight: '800',
                 textAlign: 'center',
-                ...grid(
+                ...gridFine(
                   { col: 1, row: 4, colSpan: 24, rowSpan: 3 },
                   { col: 1, row: 4, colSpan: 8, rowSpan: 3 },
                 ),
@@ -717,7 +726,7 @@ const elements: ElementDef[] = [
                 paddingY: '11px',
                 fontSize: '14px',
                 fontWeight: '600',
-                ...grid(
+                ...gridFine(
                   { col: 4, row: 16, colSpan: 18, rowSpan: 2 },
                   { col: 2, row: 16, colSpan: 6, rowSpan: 2 },
                 ),
@@ -733,7 +742,6 @@ const elements: ElementDef[] = [
         props: {
           padding: '80px 32px',
           backgroundColor: '#fafafa',
-          rowHeight: 24,
           minHeight: '760px',
         },
         children: [
@@ -747,7 +755,7 @@ const elements: ElementDef[] = [
               fontSize: '36px',
               fontWeight: '700',
               textAlign: 'center',
-              ...grid(
+              ...gridFine(
                 { col: 4, row: 2, colSpan: 18, rowSpan: 3 },
                 { col: 1, row: 1, colSpan: 8, rowSpan: 4 },
               ),
@@ -763,7 +771,7 @@ const elements: ElementDef[] = [
               fontSize: '16px',
               fontWeight: '400',
               textAlign: 'center',
-              ...grid(
+              ...gridFine(
                 { col: 6, row: 6, colSpan: 14, rowSpan: 2 },
                 { col: 1, row: 6, colSpan: 8, rowSpan: 3 },
               ),
@@ -801,6 +809,474 @@ const elements: ElementDef[] = [
     },
   },
   {
+    type: 'section',
+    label: 'Call to Action',
+    icon: Megaphone,
+    category: 'section',
+    createNode: () => ({
+      id: uid(),
+      type: 'section',
+      props: {
+        padding: '80px 32px',
+        backgroundColor: '#09090b',
+        minHeight: '420px',
+      },
+      children: [
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content: 'Ready to ship faster?',
+            variant: 'h2',
+            color: '#ffffff',
+            fontSize: '40px',
+            fontWeight: '700',
+            textAlign: 'center',
+            ...gridFine(
+              { col: 4, row: 3, colSpan: 18, rowSpan: 3 },
+              { col: 1, row: 2, colSpan: 8, rowSpan: 4 },
+            ),
+          },
+        },
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content:
+              'Join thousands of teams shipping with confidence — no credit card required.',
+            variant: 'p',
+            color: '#a1a1aa',
+            fontSize: '17px',
+            fontWeight: '400',
+            textAlign: 'center',
+            lineHeight: '1.55',
+            ...gridFine(
+              { col: 6, row: 7, colSpan: 14, rowSpan: 3 },
+              { col: 1, row: 7, colSpan: 8, rowSpan: 4 },
+            ),
+          },
+        },
+        {
+          id: uid(),
+          type: 'button',
+          props: {
+            label: 'Start free trial',
+            backgroundColor: '#3b82f6',
+            color: '#ffffff',
+            borderRadius: '8px',
+            paddingX: '28px',
+            paddingY: '13px',
+            fontSize: '15px',
+            fontWeight: '600',
+            ...gridFine(
+              { col: 9, row: 12, colSpan: 4, rowSpan: 3 },
+              { col: 2, row: 13, colSpan: 6, rowSpan: 3 },
+            ),
+          },
+        },
+        {
+          id: uid(),
+          type: 'button',
+          props: {
+            label: 'Talk to sales',
+            backgroundColor: 'transparent',
+            color: '#ffffff',
+            border: '1px solid #3f3f46',
+            borderRadius: '8px',
+            paddingX: '28px',
+            paddingY: '13px',
+            fontSize: '15px',
+            fontWeight: '600',
+            ...gridFine(
+              { col: 13, row: 12, colSpan: 4, rowSpan: 3 },
+              { col: 2, row: 17, colSpan: 6, rowSpan: 3 },
+            ),
+          },
+        },
+      ],
+    }),
+  },
+  {
+    type: 'section',
+    label: 'Logo Cloud',
+    icon: Building2,
+    category: 'section',
+    createNode: () => {
+      const logoLabels = ['ACME', 'Globex', 'Initech', 'Umbrella', 'Hooli']
+      const logos: Node[] = logoLabels.map((label, i) => ({
+        id: uid(),
+        type: 'image',
+        props: {
+          src: `https://placehold.co/140x44/e4e4e7/71717a?text=${label}`,
+          alt: `${label} logo`,
+          width: '100%',
+          height: '32px',
+          objectFit: 'contain',
+          ...gridFine(
+            { col: 3 + i * 4, row: 6, colSpan: 4, rowSpan: 2 },
+            {
+              col: i % 2 === 0 ? 1 : 5,
+              row: 5 + Math.floor(i / 2) * 3,
+              colSpan: 4,
+              rowSpan: 2,
+            },
+          ),
+        },
+      }))
+      return {
+        id: uid(),
+        type: 'section',
+        props: {
+          padding: '64px 32px',
+          backgroundColor: '#fafafa',
+          minHeight: '260px',
+        },
+        children: [
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: 'Trusted by teams at',
+              variant: 'p',
+              color: '#71717a',
+              fontSize: '14px',
+              fontWeight: '500',
+              textAlign: 'center',
+              ...gridFine(
+                { col: 7, row: 2, colSpan: 12, rowSpan: 2 },
+                { col: 1, row: 1, colSpan: 8, rowSpan: 2 },
+              ),
+            },
+          },
+          ...logos,
+        ],
+      }
+    },
+  },
+  {
+    type: 'section',
+    label: 'Testimonials',
+    icon: Quote,
+    category: 'section',
+    createNode: () => {
+      const card = (
+        quote: string,
+        name: string,
+        role: string,
+        avatarColor: string,
+        cardDesktop: GridPlacement,
+        cardMobile: GridPlacement,
+      ): Node => ({
+        id: uid(),
+        type: 'section',
+        props: {
+          padding: '28px 24px',
+          backgroundColor: '#ffffff',
+          borderRadius: '12px',
+          border: '1px solid #e4e4e7',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          ...gridFine(cardDesktop, cardMobile),
+        },
+        children: [
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: `"${quote}"`,
+              variant: 'p',
+              color: '#3f3f46',
+              fontSize: '15px',
+              fontWeight: '400',
+              textAlign: 'left',
+              lineHeight: '1.6',
+              ...gridFine(
+                { col: 1, row: 1, colSpan: 24, rowSpan: 6 },
+                { col: 1, row: 1, colSpan: 8, rowSpan: 6 },
+              ),
+            },
+          },
+          {
+            id: uid(),
+            type: 'image',
+            props: {
+              src: `https://placehold.co/80x80/${avatarColor}/${avatarColor}`,
+              alt: `${name} avatar`,
+              width: '40px',
+              height: '40px',
+              borderRadius: '999px',
+              objectFit: 'cover',
+              ...gridFine(
+                { col: 1, row: 8, colSpan: 3, rowSpan: 2 },
+                { col: 1, row: 8, colSpan: 2, rowSpan: 2 },
+              ),
+            },
+          },
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: name,
+              variant: 'p',
+              color: '#09090b',
+              fontSize: '14px',
+              fontWeight: '600',
+              textAlign: 'left',
+              ...gridFine(
+                { col: 4, row: 8, colSpan: 21, rowSpan: 1 },
+                { col: 3, row: 8, colSpan: 6, rowSpan: 1 },
+              ),
+            },
+          },
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: role,
+              variant: 'p',
+              color: '#71717a',
+              fontSize: '13px',
+              fontWeight: '400',
+              textAlign: 'left',
+              ...gridFine(
+                { col: 4, row: 9, colSpan: 21, rowSpan: 1 },
+                { col: 3, row: 9, colSpan: 6, rowSpan: 1 },
+              ),
+            },
+          },
+        ],
+      })
+      return {
+        id: uid(),
+        type: 'section',
+        props: {
+          padding: '80px 32px',
+          backgroundColor: '#ffffff',
+          minHeight: '600px',
+        },
+        children: [
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: 'Loved by teams everywhere',
+              variant: 'h2',
+              color: '#09090b',
+              fontSize: '36px',
+              fontWeight: '700',
+              textAlign: 'center',
+              ...gridFine(
+                { col: 4, row: 2, colSpan: 18, rowSpan: 3 },
+                { col: 1, row: 1, colSpan: 8, rowSpan: 4 },
+              ),
+            },
+          },
+          card(
+            'This builder saved us weeks of dev time. We shipped our landing page in an afternoon.',
+            'Sarah Chen',
+            'PM at Acme',
+            '3b82f6',
+            { col: 2, row: 8, colSpan: 7, rowSpan: 11 },
+            { col: 1, row: 6, colSpan: 8, rowSpan: 11 },
+          ),
+          card(
+            'The grid layout is intuitive and the per-breakpoint controls are exactly what I needed.',
+            'Marcus Rivera',
+            'Designer at Globex',
+            '8b5cf6',
+            { col: 10, row: 8, colSpan: 7, rowSpan: 11 },
+            { col: 1, row: 18, colSpan: 8, rowSpan: 11 },
+          ),
+          card(
+            'Our marketing team can now ship pages without bothering engineering. Game changer.',
+            'Priya Patel',
+            'Founder at Initech',
+            '10b981',
+            { col: 18, row: 8, colSpan: 7, rowSpan: 11 },
+            { col: 1, row: 30, colSpan: 8, rowSpan: 11 },
+          ),
+        ],
+      }
+    },
+  },
+  {
+    type: 'section',
+    label: 'FAQ',
+    icon: HelpCircle,
+    category: 'section',
+    createNode: () => {
+      const qa = (
+        question: string,
+        answer: string,
+        qRowDesktop: number,
+        qRowMobile: number,
+      ): Node[] => [
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content: question,
+            variant: 'h3',
+            color: '#09090b',
+            fontSize: '17px',
+            fontWeight: '600',
+            textAlign: 'left',
+            ...gridFine(
+              { col: 6, row: qRowDesktop, colSpan: 14, rowSpan: 2 },
+              { col: 1, row: qRowMobile, colSpan: 8, rowSpan: 2 },
+            ),
+          },
+        },
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content: answer,
+            variant: 'p',
+            color: '#71717a',
+            fontSize: '15px',
+            fontWeight: '400',
+            textAlign: 'left',
+            lineHeight: '1.6',
+            ...gridFine(
+              { col: 6, row: qRowDesktop + 2, colSpan: 14, rowSpan: 3 },
+              { col: 1, row: qRowMobile + 2, colSpan: 8, rowSpan: 4 },
+            ),
+          },
+        },
+      ]
+      return {
+        id: uid(),
+        type: 'section',
+        props: {
+          padding: '80px 32px',
+          backgroundColor: '#ffffff',
+          minHeight: '720px',
+        },
+        children: [
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: 'Frequently asked questions',
+              variant: 'h2',
+              color: '#09090b',
+              fontSize: '36px',
+              fontWeight: '700',
+              textAlign: 'center',
+              ...gridFine(
+                { col: 4, row: 2, colSpan: 18, rowSpan: 3 },
+                { col: 1, row: 1, colSpan: 8, rowSpan: 4 },
+              ),
+            },
+          },
+          ...qa(
+            'How does pricing work?',
+            'Pricing scales with usage. Start free with our generous free tier and upgrade as you grow. Cancel anytime.',
+            7,
+            6,
+          ),
+          ...qa(
+            'Can I customize my page?',
+            'Yes — every element is fully editable. Adjust typography, colors, layout, and per-breakpoint overrides for desktop and mobile.',
+            13,
+            13,
+          ),
+          ...qa(
+            'Do you support custom domains?',
+            'Custom domains are available on the Pro plan and above. We handle SSL automatically.',
+            19,
+            22,
+          ),
+          ...qa(
+            'Is there a free trial?',
+            'Every paid plan starts with a 14-day free trial. No credit card required to start.',
+            25,
+            30,
+          ),
+        ],
+      }
+    },
+  },
+  {
+    type: 'section',
+    label: 'Stats',
+    icon: BarChart3,
+    category: 'section',
+    createNode: () => {
+      const stat = (
+        number: string,
+        label: string,
+        col: number,
+        colSpan: number,
+        mobileRow: number,
+      ): Node[] => [
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content: number,
+            variant: 'h2',
+            color: '#09090b',
+            fontSize: '48px',
+            fontWeight: '800',
+            textAlign: 'center',
+            ...gridFine(
+              { col, row: 5, colSpan, rowSpan: 3 },
+              { col: 1, row: mobileRow, colSpan: 8, rowSpan: 3 },
+            ),
+          },
+        },
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content: label,
+            variant: 'p',
+            color: '#71717a',
+            fontSize: '14px',
+            fontWeight: '500',
+            textAlign: 'center',
+            ...gridFine(
+              { col, row: 9, colSpan, rowSpan: 2 },
+              { col: 1, row: mobileRow + 3, colSpan: 8, rowSpan: 2 },
+            ),
+          },
+        },
+      ]
+      return {
+        id: uid(),
+        type: 'section',
+        props: {
+          padding: '80px 32px',
+          backgroundColor: '#fafafa',
+          minHeight: '380px',
+        },
+        children: [
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: 'By the numbers',
+              variant: 'h2',
+              color: '#09090b',
+              fontSize: '32px',
+              fontWeight: '700',
+              textAlign: 'center',
+              ...gridFine(
+                { col: 4, row: 1, colSpan: 18, rowSpan: 3 },
+                { col: 1, row: 1, colSpan: 8, rowSpan: 3 },
+              ),
+            },
+          },
+          ...stat('10M+', 'Pages shipped', 1, 6, 5),
+          ...stat('50k', 'Happy teams', 7, 6, 11),
+          ...stat('99.9%', 'Uptime SLA', 13, 6, 17),
+          ...stat('120+', 'Countries served', 19, 6, 23),
+        ],
+      }
+    },
+  },
+  {
     type: 'footer',
     label: 'Footer',
     icon: PanelBottom,
@@ -808,7 +1284,7 @@ const elements: ElementDef[] = [
     createNode: () => ({
       id: uid(),
       type: 'footer',
-      props: { backgroundColor: '#09090b', padding: '40px 24px', rowHeight: 24 },
+      props: { backgroundColor: '#09090b', padding: '40px 24px' },
       children: [
         {
           id: uid(),
@@ -820,7 +1296,7 @@ const elements: ElementDef[] = [
             fontSize: '18px',
             fontWeight: '700',
             textAlign: 'center',
-            ...grid(
+            ...gridFine(
               { col: 11, row: 1, colSpan: 4, rowSpan: 2 },
               { col: 1, row: 1, colSpan: 8, rowSpan: 2 },
             ),
@@ -836,7 +1312,7 @@ const elements: ElementDef[] = [
             fontSize: '14px',
             fontWeight: '400',
             textAlign: 'center',
-            ...grid(
+            ...gridFine(
               { col: 8, row: 4, colSpan: 4, rowSpan: 2 },
               { col: 1, row: 4, colSpan: 4, rowSpan: 2 },
             ),
@@ -852,7 +1328,7 @@ const elements: ElementDef[] = [
             fontSize: '14px',
             fontWeight: '400',
             textAlign: 'center',
-            ...grid(
+            ...gridFine(
               { col: 12, row: 4, colSpan: 3, rowSpan: 2 },
               { col: 5, row: 4, colSpan: 4, rowSpan: 2 },
             ),
@@ -868,7 +1344,7 @@ const elements: ElementDef[] = [
             fontSize: '14px',
             fontWeight: '400',
             textAlign: 'center',
-            ...grid(
+            ...gridFine(
               { col: 15, row: 4, colSpan: 3, rowSpan: 2 },
               { col: 1, row: 6, colSpan: 8, rowSpan: 2 },
             ),
@@ -884,7 +1360,7 @@ const elements: ElementDef[] = [
             fontSize: '13px',
             fontWeight: '400',
             textAlign: 'center',
-            ...grid(
+            ...gridFine(
               { col: 8, row: 7, colSpan: 10, rowSpan: 2 },
               { col: 1, row: 9, colSpan: 8, rowSpan: 2 },
             ),

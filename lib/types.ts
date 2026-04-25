@@ -16,6 +16,18 @@ export type GridProps = {
 
 export type MenuSlot = 'left' | 'center' | 'right'
 
+export type FormFieldType = 'text' | 'email' | 'tel' | 'textarea'
+
+export type FormField = {
+  id: string
+  type: FormFieldType
+  name: string
+  label?: string
+  placeholder?: string
+  required?: boolean
+  rows?: number
+}
+
 export type Node = {
   id: string
   type: NodeType

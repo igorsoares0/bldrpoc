@@ -20,9 +20,10 @@ import {
   HelpCircle,
   BarChart3,
   ListOrdered,
+  MessageSquare,
 } from 'lucide-react'
 import { useEditorStore } from '@/lib/store'
-import type { GridPlacement, Node, NodeType } from '@/lib/types'
+import type { FormField, GridPlacement, Node, NodeType } from '@/lib/types'
 
 type ElementDef = {
   type: NodeType
@@ -1403,6 +1404,109 @@ const elements: ElementDef[] = [
             17,
             30,
           ),
+        ],
+      }
+    },
+  },
+  {
+    type: 'section',
+    label: 'Contact',
+    icon: MessageSquare,
+    category: 'section',
+    createNode: () => {
+      const contactFields: FormField[] = [
+        {
+          id: uid(),
+          type: 'text',
+          name: 'name',
+          label: 'Name',
+          placeholder: 'Your name',
+          required: true,
+        },
+        {
+          id: uid(),
+          type: 'email',
+          name: 'email',
+          label: 'Email',
+          placeholder: 'you@example.com',
+          required: true,
+        },
+        {
+          id: uid(),
+          type: 'textarea',
+          name: 'message',
+          label: 'Message',
+          placeholder: 'How can we help?',
+          required: true,
+          rows: 5,
+        },
+      ]
+      return {
+        id: uid(),
+        type: 'section',
+        props: {
+          padding: '80px 32px',
+          backgroundColor: '#ffffff',
+          minHeight: '720px',
+        },
+        children: [
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: 'Get in touch',
+              variant: 'h2',
+              color: '#09090b',
+              fontSize: '36px',
+              fontWeight: '700',
+              textAlign: 'center',
+              ...gridFine(
+                { col: 4, row: 2, colSpan: 18, rowSpan: 3 },
+                { col: 1, row: 1, colSpan: 8, rowSpan: 4 },
+              ),
+            },
+          },
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: "Tell us about your project — we'll get back within one business day.",
+              variant: 'p',
+              color: '#71717a',
+              fontSize: '16px',
+              fontWeight: '400',
+              textAlign: 'center',
+              lineHeight: '1.6',
+              ...gridFine(
+                { col: 6, row: 6, colSpan: 14, rowSpan: 3 },
+                { col: 1, row: 6, colSpan: 8, rowSpan: 4 },
+              ),
+            },
+          },
+          {
+            id: uid(),
+            type: 'form',
+            props: {
+              fields: contactFields,
+              buttonLabel: 'Send message',
+              successMessage: "Thanks! We'll be in touch soon.",
+              backgroundColor: '#ffffff',
+              borderColor: '#e4e4e7',
+              inputColor: '#09090b',
+              labelColor: '#3f3f46',
+              buttonBackgroundColor: '#3b82f6',
+              buttonColor: '#ffffff',
+              borderRadius: '8px',
+              paddingX: '14px',
+              paddingY: '11px',
+              gap: '14px',
+              fontSize: '14px',
+              ...gridFine(
+                { col: 7, row: 11, colSpan: 12, rowSpan: 22 },
+                { col: 1, row: 11, colSpan: 8, rowSpan: 22 },
+              ),
+            },
+          },
         ],
       }
     },

@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import type { Node, Viewport } from '@/lib/types'
+import type { FormField, Node, Viewport } from '@/lib/types'
 import {
   buildGridStyles,
   gridSectionClassName,
@@ -225,10 +225,12 @@ function FormNode({ node }: PreviewNodeProps) {
   const buttonLabel = (node.props.buttonLabel as string | undefined) ?? 'Subscribe'
   const successMessage = (node.props.successMessage as string | undefined) ?? 'Thanks! Check your inbox.'
   const action = node.props.action as string | undefined
+  const fields = node.props.fields as FormField[] | undefined
   const backgroundColor = resolveProp<string>(node, 'backgroundColor', viewport) ?? '#ffffff'
   const borderColor = resolveProp<string>(node, 'borderColor', viewport) ?? '#e4e4e7'
   const borderRadius = resolveProp<string>(node, 'borderRadius', viewport) ?? '8px'
   const inputColor = resolveProp<string>(node, 'inputColor', viewport) ?? '#09090b'
+  const labelColor = resolveProp<string>(node, 'labelColor', viewport) ?? '#3f3f46'
   const buttonBackgroundColor = resolveProp<string>(node, 'buttonBackgroundColor', viewport) ?? '#3b82f6'
   const buttonColor = resolveProp<string>(node, 'buttonColor', viewport) ?? '#ffffff'
   const fontSize = resolveProp<string>(node, 'fontSize', viewport) ?? '14px'
@@ -245,24 +247,33 @@ function FormNode({ node }: PreviewNodeProps) {
     letterSpacing,
   }
 
-  const [email, setEmail] = useState('')
+  const isMulti = Array.isArray(fields) && fields.length > 0
+  const initialValues: Record<string, string> = isMulti
+    ? Object.fromEntries(fields!.map((f) => [f.name, '']))
+    : { email: '' }
+
+  const [values, setValues] = useState<Record<string, string>>(initialValues)
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+
+  function setField(name: string, val: string) {
+    setValues((prev) => ({ ...prev, [name]: val }))
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!email || status === 'submitting') return
+    if (status === 'submitting') return
     setStatus('submitting')
     try {
       if (typeof action === 'string' && action.length > 0) {
         const res = await fetch(action, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify(values),
         })
         if (!res.ok) throw new Error('Submit failed')
       }
       setStatus('success')
-      setEmail('')
+      setValues(initialValues)
     } catch {
       setStatus('error')
     }
@@ -287,52 +298,114 @@ function FormNode({ node }: PreviewNodeProps) {
     )
   }
 
+  const inputBaseStyle: React.CSSProperties = {
+    width: '100%',
+    minWidth: 0,
+    backgroundColor,
+    color: inputColor,
+    border: `1px solid ${borderColor}`,
+    borderRadius,
+    padding: `${paddingY} ${paddingX}`,
+    fontSize,
+    ...typographyStyle,
+    outline: 'none',
+    boxSizing: 'border-box',
+  }
+
+  const buttonBaseStyle: React.CSSProperties = {
+    backgroundColor: buttonBackgroundColor,
+    color: buttonColor,
+    borderRadius,
+    padding: `${paddingY} ${paddingX}`,
+    fontSize,
+    fontWeight: 600,
+    border: 'none',
+    cursor: status === 'submitting' ? 'wait' : 'pointer',
+    ...typographyStyle,
+    whiteSpace: 'nowrap',
+  }
+
+  if (!isMulti) {
+    return (
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          display: 'flex',
+          gap,
+          alignItems: 'stretch',
+          width: '100%',
+          height: '100%',
+        }}
+      >
+        <input
+          type="email"
+          required
+          value={values.email ?? ''}
+          onChange={(e) => setField('email', e.target.value)}
+          placeholder={placeholder}
+          disabled={status === 'submitting'}
+          style={{ ...inputBaseStyle, flex: 1 }}
+        />
+        <button type="submit" disabled={status === 'submitting'} style={buttonBaseStyle}>
+          {status === 'submitting' ? '...' : buttonLabel}
+        </button>
+      </form>
+    )
+  }
+
   return (
     <form
       onSubmit={handleSubmit}
       style={{
         display: 'flex',
+        flexDirection: 'column',
         gap,
-        alignItems: 'stretch',
         width: '100%',
         height: '100%',
       }}
     >
-      <input
-        type="email"
-        required
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder={placeholder}
-        disabled={status === 'submitting'}
-        style={{
-          flex: 1,
-          minWidth: 0,
-          backgroundColor,
-          color: inputColor,
-          border: `1px solid ${borderColor}`,
-          borderRadius,
-          padding: `${paddingY} ${paddingX}`,
-          fontSize,
-          ...typographyStyle,
-          outline: 'none',
-        }}
-      />
+      {fields!.map((field) => (
+        <div key={field.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {field.label && (
+            <label
+              style={{
+                fontSize: `calc(${fontSize} * 0.92)`,
+                fontWeight: 500,
+                color: labelColor,
+                ...typographyStyle,
+              }}
+            >
+              {field.label}
+              {field.required ? ' *' : ''}
+            </label>
+          )}
+          {field.type === 'textarea' ? (
+            <textarea
+              required={field.required}
+              value={values[field.name] ?? ''}
+              onChange={(e) => setField(field.name, e.target.value)}
+              placeholder={field.placeholder}
+              disabled={status === 'submitting'}
+              rows={field.rows ?? 4}
+              style={{ ...inputBaseStyle, resize: 'vertical' }}
+            />
+          ) : (
+            <input
+              type={field.type}
+              required={field.required}
+              value={values[field.name] ?? ''}
+              onChange={(e) => setField(field.name, e.target.value)}
+              placeholder={field.placeholder}
+              disabled={status === 'submitting'}
+              style={inputBaseStyle}
+            />
+          )}
+        </div>
+      ))}
       <button
         type="submit"
         disabled={status === 'submitting'}
-        style={{
-          backgroundColor: buttonBackgroundColor,
-          color: buttonColor,
-          borderRadius,
-          padding: `${paddingY} ${paddingX}`,
-          fontSize,
-          fontWeight: 600,
-          border: 'none',
-          cursor: status === 'submitting' ? 'wait' : 'pointer',
-          ...typographyStyle,
-          whiteSpace: 'nowrap',
-        }}
+        style={{ ...buttonBaseStyle, alignSelf: 'stretch' }}
       >
         {status === 'submitting' ? '...' : buttonLabel}
       </button>

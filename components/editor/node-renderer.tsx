@@ -7,7 +7,7 @@ import { useEditorStore } from '@/lib/store'
 import { colsForViewport, gridSectionClassName, DEFAULT_ROW_HEIGHT } from '@/lib/grid-utils'
 import { MENU_SLOTS, partitionMenuChildren } from '@/lib/menu-utils'
 import { resolveProp } from '@/lib/prop-utils'
-import type { MenuSlot, Node, NodeType } from '@/lib/types'
+import type { FormField, MenuSlot, Node, NodeType } from '@/lib/types'
 
 interface NodeRendererProps {
   node: Node
@@ -310,10 +310,12 @@ function FormNode({ node }: ContainerRenderProps) {
   const viewport = useEditorStore((s) => s.viewport)
   const placeholder = (node.props.placeholder as string | undefined) ?? 'your@email.com'
   const buttonLabel = (node.props.buttonLabel as string | undefined) ?? 'Subscribe'
+  const fields = node.props.fields as FormField[] | undefined
   const backgroundColor = resolveProp<string>(node, 'backgroundColor', viewport) ?? '#ffffff'
   const borderColor = resolveProp<string>(node, 'borderColor', viewport) ?? '#e4e4e7'
   const borderRadius = resolveProp<string>(node, 'borderRadius', viewport) ?? '8px'
   const inputColor = resolveProp<string>(node, 'inputColor', viewport) ?? '#09090b'
+  const labelColor = resolveProp<string>(node, 'labelColor', viewport) ?? '#3f3f46'
   const buttonBackgroundColor = resolveProp<string>(node, 'buttonBackgroundColor', viewport) ?? '#3b82f6'
   const buttonColor = resolveProp<string>(node, 'buttonColor', viewport) ?? '#ffffff'
   const fontSize = resolveProp<string>(node, 'fontSize', viewport) ?? '14px'
@@ -330,52 +332,108 @@ function FormNode({ node }: ContainerRenderProps) {
     letterSpacing,
   }
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    minWidth: 0,
+    backgroundColor,
+    color: inputColor,
+    border: `1px solid ${borderColor}`,
+    borderRadius,
+    padding: `${paddingY} ${paddingX}`,
+    fontSize,
+    ...typographyStyle,
+    outline: 'none',
+    pointerEvents: 'none',
+    boxSizing: 'border-box',
+  }
+
+  const buttonStyle: React.CSSProperties = {
+    backgroundColor: buttonBackgroundColor,
+    color: buttonColor,
+    borderRadius,
+    padding: `${paddingY} ${paddingX}`,
+    fontSize,
+    fontWeight: 600,
+    ...typographyStyle,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    whiteSpace: 'nowrap',
+  }
+
+  if (!fields || fields.length === 0) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          gap,
+          alignItems: 'stretch',
+          width: '100%',
+          height: '100%',
+        }}
+      >
+        <input
+          type="email"
+          placeholder={placeholder}
+          readOnly
+          tabIndex={-1}
+          onMouseDown={(e) => e.preventDefault()}
+          style={{ ...inputStyle, flex: 1 }}
+        />
+        <div role="presentation" style={buttonStyle}>
+          {buttonLabel}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       style={{
         display: 'flex',
+        flexDirection: 'column',
         gap,
-        alignItems: 'stretch',
         width: '100%',
         height: '100%',
       }}
     >
-      <input
-        type="email"
-        placeholder={placeholder}
-        readOnly
-        tabIndex={-1}
-        onMouseDown={(e) => e.preventDefault()}
-        style={{
-          flex: 1,
-          minWidth: 0,
-          backgroundColor,
-          color: inputColor,
-          border: `1px solid ${borderColor}`,
-          borderRadius,
-          padding: `${paddingY} ${paddingX}`,
-          fontSize,
-          ...typographyStyle,
-          outline: 'none',
-          pointerEvents: 'none',
-        }}
-      />
-      <div
-        role="presentation"
-        style={{
-          backgroundColor: buttonBackgroundColor,
-          color: buttonColor,
-          borderRadius,
-          padding: `${paddingY} ${paddingX}`,
-          fontSize,
-          fontWeight: 600,
-          ...typographyStyle,
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          whiteSpace: 'nowrap',
-        }}
-      >
+      {fields.map((field) => (
+        <div key={field.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {field.label && (
+            <span
+              style={{
+                fontSize: `calc(${fontSize} * 0.92)`,
+                fontWeight: 500,
+                color: labelColor,
+                ...typographyStyle,
+              }}
+            >
+              {field.label}
+              {field.required ? ' *' : ''}
+            </span>
+          )}
+          {field.type === 'textarea' ? (
+            <textarea
+              placeholder={field.placeholder}
+              readOnly
+              tabIndex={-1}
+              rows={field.rows ?? 4}
+              onMouseDown={(e) => e.preventDefault()}
+              style={{ ...inputStyle, resize: 'none' }}
+            />
+          ) : (
+            <input
+              type={field.type}
+              placeholder={field.placeholder}
+              readOnly
+              tabIndex={-1}
+              onMouseDown={(e) => e.preventDefault()}
+              style={inputStyle}
+            />
+          )}
+        </div>
+      ))}
+      <div role="presentation" style={{ ...buttonStyle, alignSelf: 'stretch' }}>
         {buttonLabel}
       </div>
     </div>

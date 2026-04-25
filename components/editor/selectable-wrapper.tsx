@@ -337,13 +337,6 @@ export function SelectableWrapper({
 
         const snapshot = snapshotDirectChildren(sectionEl, metrics, cols)
 
-        const draggedPlacement = snapshot[nodeId] ?? {
-          col: 1,
-          row: 1,
-          colSpan: 4,
-          rowSpan: 4,
-        }
-
         const sectionType = sectionNode?.type
         const isMenuMode = isMenuModeContainerType(sectionType)
         const naturalWidth = isMenuMode
@@ -366,9 +359,9 @@ export function SelectableWrapper({
           offsetCol,
           offsetRow,
           colSpan: isMenuMode
-            ? Math.max(draggedPlacement.colSpan, minColSpan)
-            : draggedPlacement.colSpan,
-          rowSpan: isMenuMode ? 1 : draggedPlacement.rowSpan,
+            ? Math.max(activePlacement.colSpan, minColSpan)
+            : activePlacement.colSpan,
+          rowSpan: isMenuMode ? 1 : activePlacement.rowSpan,
           snapshot,
           isMenuMode,
           minColSpan,

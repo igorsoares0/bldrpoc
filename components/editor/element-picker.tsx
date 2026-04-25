@@ -19,6 +19,7 @@ import {
   Quote,
   HelpCircle,
   BarChart3,
+  ListOrdered,
 } from 'lucide-react'
 import { useEditorStore } from '@/lib/store'
 import type { GridPlacement, Node, NodeType } from '@/lib/types'
@@ -1272,6 +1273,136 @@ const elements: ElementDef[] = [
           ...stat('50k', 'Happy teams', 7, 6, 11),
           ...stat('99.9%', 'Uptime SLA', 13, 6, 17),
           ...stat('120+', 'Countries served', 19, 6, 23),
+        ],
+      }
+    },
+  },
+  {
+    type: 'section',
+    label: 'How it works',
+    icon: ListOrdered,
+    category: 'section',
+    createNode: () => {
+      const step = (
+        index: string,
+        title: string,
+        description: string,
+        col: number,
+        mobileRowStart: number,
+      ): Node[] => [
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content: index,
+            variant: 'p',
+            color: '#3b82f6',
+            fontSize: '32px',
+            fontWeight: '800',
+            textAlign: 'left',
+            letterSpacing: '-0.02em',
+            ...gridFine(
+              { col, row: 11, colSpan: 7, rowSpan: 3 },
+              { col: 1, row: mobileRowStart, colSpan: 8, rowSpan: 3 },
+            ),
+          },
+        },
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content: title,
+            variant: 'h3',
+            color: '#09090b',
+            fontSize: '20px',
+            fontWeight: '700',
+            textAlign: 'left',
+            ...gridFine(
+              { col, row: 14, colSpan: 7, rowSpan: 2 },
+              { col: 1, row: mobileRowStart + 3, colSpan: 8, rowSpan: 2 },
+            ),
+          },
+        },
+        {
+          id: uid(),
+          type: 'text',
+          props: {
+            content: description,
+            variant: 'p',
+            color: '#71717a',
+            fontSize: '15px',
+            fontWeight: '400',
+            textAlign: 'left',
+            lineHeight: '1.6',
+            ...gridFine(
+              { col, row: 16, colSpan: 7, rowSpan: 4 },
+              { col: 1, row: mobileRowStart + 5, colSpan: 8, rowSpan: 4 },
+            ),
+          },
+        },
+      ]
+      return {
+        id: uid(),
+        type: 'section',
+        props: {
+          padding: '80px 32px',
+          backgroundColor: '#ffffff',
+          minHeight: '560px',
+        },
+        children: [
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: 'How it works',
+              variant: 'h2',
+              color: '#09090b',
+              fontSize: '36px',
+              fontWeight: '700',
+              textAlign: 'center',
+              ...gridFine(
+                { col: 4, row: 2, colSpan: 18, rowSpan: 3 },
+                { col: 1, row: 1, colSpan: 8, rowSpan: 4 },
+              ),
+            },
+          },
+          {
+            id: uid(),
+            type: 'text',
+            props: {
+              content: 'Get from idea to live page in three simple steps.',
+              variant: 'p',
+              color: '#71717a',
+              fontSize: '16px',
+              fontWeight: '400',
+              textAlign: 'center',
+              ...gridFine(
+                { col: 6, row: 6, colSpan: 14, rowSpan: 2 },
+                { col: 1, row: 6, colSpan: 8, rowSpan: 3 },
+              ),
+            },
+          },
+          ...step(
+            '01',
+            'Pick a template',
+            'Choose from production-ready sections — hero, features, pricing, and more — built for desktop and mobile.',
+            1,
+            10,
+          ),
+          ...step(
+            '02',
+            'Make it yours',
+            'Drag, resize, and edit any element. Override styles per breakpoint without touching desktop.',
+            9,
+            20,
+          ),
+          ...step(
+            '03',
+            'Publish in one click',
+            'Hit publish and your page goes live with a clean URL — no DevOps, no deploy pipeline.',
+            17,
+            30,
+          ),
         ],
       }
     },

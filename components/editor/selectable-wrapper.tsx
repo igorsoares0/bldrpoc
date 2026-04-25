@@ -18,7 +18,7 @@ import {
   snapPlacementToSiblings,
   type ResizeAnchor,
 } from '@/lib/grid-utils'
-import type { GridPlacement, GridProps, Node, NodeType } from '@/lib/types'
+import type { GridPlacement, GridProps, Node, NodeType, Viewport } from '@/lib/types'
 
 const typeLabels: Record<NodeType, string> = {
   section: 'Section',
@@ -49,37 +49,15 @@ type SectionMetrics = {
   rowHeight: number
 }
 
-function rectToPlacement(
-  childRect: DOMRect,
-  metrics: SectionMetrics,
-  cols: number,
-): GridPlacement {
-  const colSpan = Math.max(1, Math.round(childRect.width / metrics.cellWidth))
-  const rowSpan = Math.max(1, Math.round(childRect.height / metrics.rowHeight))
-  const col = Math.max(
-    1,
-    Math.round((childRect.left - metrics.contentLeft) / metrics.cellWidth) + 1,
-  )
-  const row = Math.max(
-    1,
-    Math.round((childRect.top - metrics.contentTop) / metrics.rowHeight) + 1,
-  )
-  return clampPlacement({ col, row, colSpan, rowSpan }, cols)
-}
-
-function snapshotDirectChildren(
-  sectionEl: HTMLElement,
-  metrics: SectionMetrics,
-  cols: number,
+function snapshotPlacements(
+  sectionNode: Node,
+  viewport: Viewport,
 ): Record<string, GridPlacement> {
   const out: Record<string, GridPlacement> = {}
-  Array.from(sectionEl.children).forEach((el) => {
-    if (!(el instanceof HTMLElement)) return
-    const id = el.getAttribute('data-node-id')
-    const type = el.getAttribute('data-node-type') as NodeType | null
-    if (!id || !type || !isPlaceable(type)) return
-    const r = el.getBoundingClientRect()
-    out[id] = rectToPlacement(r, metrics, cols)
+  ;(sectionNode.children ?? []).forEach((child, i) => {
+    if (isPlaceable(child.type)) {
+      out[child.id] = getActivePlacement(child, viewport, i)
+    }
   })
   return out
 }
@@ -326,18 +304,20 @@ export function SelectableWrapper({
 
         const cols = colsForViewport(viewport)
         const sectionNode = getNodeById(useEditorStore.getState().tree, sectionId)
-        const rowHeight = sectionNode?.props.rowHeight ?? DEFAULT_ROW_HEIGHT
+        if (!sectionNode) return
+        const rowHeight = sectionNode.props.rowHeight ?? DEFAULT_ROW_HEIGHT
 
         const metrics = readSectionMetrics(sectionEl, cols, rowHeight)
-        const childRect = e.currentTarget.getBoundingClientRect()
-        const offsetCol = (e.clientX - metrics.contentLeft) / metrics.cellWidth -
-          (childRect.left - metrics.contentLeft) / metrics.cellWidth
-        const offsetRow = (e.clientY - metrics.contentTop) / metrics.rowHeight -
-          (childRect.top - metrics.contentTop) / metrics.rowHeight
+        const cellLeft =
+          metrics.contentLeft + (activePlacement.col - 1) * metrics.cellWidth
+        const cellTop =
+          metrics.contentTop + (activePlacement.row - 1) * metrics.rowHeight
+        const offsetCol = (e.clientX - cellLeft) / metrics.cellWidth
+        const offsetRow = (e.clientY - cellTop) / metrics.rowHeight
 
-        const snapshot = snapshotDirectChildren(sectionEl, metrics, cols)
+        const snapshot = snapshotPlacements(sectionNode, viewport)
 
-        const sectionType = sectionNode?.type
+        const sectionType = sectionNode.type
         const isMenuMode = isMenuModeContainerType(sectionType)
         const naturalWidth = isMenuMode
           ? Math.max(

@@ -41,8 +41,7 @@ export function GridOverlay({ sectionId }: GridOverlayProps) {
           aria-hidden
           style={{
             ...placementToStyle(dragGhost),
-            backgroundColor: 'rgba(99,102,241,0.18)',
-            border: '2px dashed rgba(99,102,241,0.7)',
+            border: '1px dashed rgba(99,102,241,0.45)',
             borderRadius: 4,
             pointerEvents: 'none',
             zIndex: 31,

@@ -1503,6 +1503,7 @@ const elements: ElementDef[] = [
 ]
 
 const containerTypes: NodeType[] = ['section', 'menu-bar', 'footer']
+const topLevelTypes: NodeType[] = ['section', 'menu-bar', 'footer']
 
 export function ElementPicker() {
   const [open, setOpen] = useState(false)
@@ -1526,7 +1527,7 @@ export function ElementPicker() {
     const newNode = element.createNode()
 
     let parentId = tree.id
-    if (selectedId) {
+    if (!topLevelTypes.includes(newNode.type) && selectedId) {
       const findNode = (node: Node): Node | null => {
         if (node.id === selectedId) return node
         if (node.children) {

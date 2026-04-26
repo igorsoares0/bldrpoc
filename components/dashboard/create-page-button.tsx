@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, FileText, LayoutTemplate } from 'lucide-react'
+import { Plus, FileText, LayoutTemplate, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
@@ -20,6 +20,12 @@ const templates = [
     description: 'Menu bar, hero section, and footer included',
     icon: LayoutTemplate,
   },
+  {
+    id: 'gradient-labs',
+    label: 'AI Startup',
+    description: 'Full landing page for an AI / fintech startup',
+    icon: Sparkles,
+  },
 ]
 
 export function CreatePageButton() {
@@ -32,7 +38,7 @@ export function CreatePageButton() {
     try {
       const page = await createPage({
         title: 'Untitled Page',
-        template: templateId === 'blank' ? 'blank' : undefined,
+        template: templateId,
       })
       router.push(`/editor/${page.id}`)
     } catch {
@@ -51,7 +57,7 @@ export function CreatePageButton() {
         <p className="text-sm text-text-muted mb-4">
           Choose how you want to start
         </p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           {templates.map((t) => (
             <button
               key={t.id}

@@ -1,5 +1,9 @@
 import { pages } from '@/lib/storage'
-import { createDefaultContent, createBlankContent } from '@/lib/default-content'
+import {
+  createDefaultContent,
+  createBlankContent,
+  createGradientLabsContent,
+} from '@/lib/default-content'
 import type { Page } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -16,7 +20,11 @@ export async function POST(request: Request) {
   const body = await request.json()
   const id = crypto.randomUUID()
   const content =
-    body.template === 'blank' ? createBlankContent() : createDefaultContent()
+    body.template === 'blank'
+      ? createBlankContent()
+      : body.template === 'gradient-labs'
+        ? createGradientLabsContent()
+        : createDefaultContent()
   const page: Page = {
     id,
     title: body.title || 'Untitled Page',
